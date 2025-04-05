@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open World Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Arial', sans-serif;
+        }
+        #game-container { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+        }
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            color: white;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            z-index: 200;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            z-index: 100;
+        }
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .health-fill {
+            height: 100%;
+            background-color: #ff0000;
+            width: 100%;
+            transition: width 0.3s;
+        }
+        .mini-map {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 100;
+            border: 2px solid white;
+        }
+        .mini-map-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .vehicle-hud {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            display: none;
+            z-index: 100;
+        }
+        #radio {
+            position: absolute;
+            bottom: 20px;
+            left: 180px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            z-index: 100;
+        }
+        .map-icon {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .map-player {
+            background-color: #00ff00;
+            width: 8px;
+            height: 8px;
+        }
+        .map-road {
+            background-color: #555555;
+        }
+        .map-building {
+            background-color: #888888;
+        }
+        .map-vehicle {
+            background-color: #ff0000;
+        }
+        .map-pedestrian {
+            background-color: #0000ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="hud">
+            <div class="health-bar">
+                <div class="health-fill" id="health-bar"></div>
+            </div>
+            <div id="money">$5000</div>
+            <div id="time">12:00 PM</div>
+            <div id="wanted-level">Wanted: ★☆☆☆☆</div>
+        </div>
+        
+        <div id="menu">
+            <h1 class="text-3xl font-bold mb-6">OPEN WORLD</h1>
+            <button id="start-game" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mb-4">
+                START GAME
+            </button>
+            <div class="mt-4">
+                <h2 class="text-xl mb-2">Controls</h2>
+                <p>WASD: Move</p>
+                <p>Space: Jump</p>
+                <p>E: Enter/Exit Vehicle</p>
+                <p>F: Toggle Flashlight</p>
+                <p>Mouse: Look Around</p>
+                <p>M: Toggle Mini-map</p>
+            </div>
+        </div>
+        
+        <div id="controls">
+            <p>WASD: Move</p>
+            <p>Space: Jump</p>
+            <p>E: Enter Vehicle</p>
+            <p>M: Toggle Map</p>
+        </div>
+        
+        <div class="mini-map" id="mini-map">
+            <canvas id="mini-map-canvas" class="mini-map-canvas"></canvas>
+        </div>
+        
+        <div class="vehicle-hud" id="vehicle-hud">
+            <div id="speed">Speed: 0 mph</div>
+            <div id="gear">Gear: N</div>
+        </div>
+        
+        <div id="radio">
+            <div id="radio-station">Radio: Off</div>
+            <button id="change-radio" class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded mt-1">
+                Change Station
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let scene, camera, renderer, controls;
+        let player, vehicle, world;
+        let clock = new THREE.Clock();
+        let mixer, vehicleMixer;
+        let isInVehicle = false;
+        let health = 100;
+        let money = 5000;
+        let wantedLevel = 0;
+        let currentHour = 12;
+        let isDay = true;
+        let flashlight;
+        let radioStations = ["Off", "Pop FM", "Rock Radio", "Classical", "Hip Hop"];
+        let currentRadioStation = 0;
+        let pedestrians = [];
+        let vehicles = [];
+        let buildings = [];
+        let roads = [];
+        let miniMapVisible = true;
+        let miniMapCanvas, miniMapCtx;
+        
+        // Movement variables
+        const moveSpeed = 5;
+        const jumpHeight = 7;
+        const vehicleSpeed = 20;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let canJump = true;
+        
+        // Initialize the game
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0xcccccc, 0.002);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 20);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+            
+            // Add orbit controls for debugging
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI / 2;
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            scene.add(directionalLight);
+            
+            // Add hemisphere light for more natural outdoor lighting
+            const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+            scene.add(hemisphereLight);
+            
+            // Add flashlight
+            flashlight = new THREE.SpotLight(0xffffff, 1, 100, Math.PI / 4, 0.5);
+            flashlight.position.set(0, 1.5, 0);
+            flashlight.target.position.set(0, 0, -5);
+            flashlight.castShadow = true;
+            flashlight.visible = false;
+            
+            // Create ground
+            const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x3a5f0b,
+                roughness: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Initialize mini-map
+            initMiniMap();
+            
+            // Create player
+            createPlayer();
+            
+            // Create a simple vehicle
+            createVehicle();
+            
+            // Generate city
+            generateCity();
+            
+            // Add event listeners
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.getElementById('start-game').addEventListener('click', startGame);
+            document.getElementById('change-radio').addEventListener('click', changeRadioStation);
+            
+            // Start game loop
+            animate();
+        }
+        
+        function initMiniMap() {
+            miniMapCanvas = document.getElementById('mini-map-canvas');
+            miniMapCtx = miniMapCanvas.getContext('2d');
+            
+            // Set canvas size
+            miniMapCanvas.width = 150;
+            miniMapCanvas.height = 150;
+        }
+        
+        function updateMiniMap() {
+            if (!miniMapVisible) return;
+            
+            // Clear the canvas
+            miniMapCtx.clearRect(0, 0, miniMapCanvas.width, miniMapCanvas.height);
+            
+            // Draw background
+            miniMapCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            miniMapCtx.fillRect(0, 0, miniMapCanvas.width, miniMapCanvas.height);
+            
+            // Get current position (player or vehicle)
+            const currentPos = isInVehicle ? vehicle.position : player.position;
+            
+            // Calculate view bounds (200x200 units around player)
+            const viewSize = 200;
+            const scale = miniMapCanvas.width / viewSize;
+            
+            // Draw roads
+            miniMapCtx.fillStyle = '#555555';
+            for (const road of roads) {
+                const roadWidth = road.geometry.parameters.width || road.geometry.parameters.height;
+                const roadLength = road.geometry.parameters.height || road.geometry.parameters.width;
+                
+                const x = (road.position.x - currentPos.x + viewSize/2) * scale;
+                const z = (road.position.z - currentPos.z + viewSize/2) * scale;
+                const width = (roadWidth === 5 ? 5 : 100) * scale;
+                const height = (roadLength === 5 ? 5 : 100) * scale;
+                
+                miniMapCtx.fillRect(x - width/2, z - height/2, width, height);
+            }
+            
+            // Draw buildings
+            miniMapCtx.fillStyle = '#888888';
+            for (const building of buildings) {
+                const sizeX = building.geometry.parameters.width * scale;
+                const sizeZ = building.geometry.parameters.depth * scale;
+                
+                const x = (building.position.x - currentPos.x + viewSize/2) * scale;
+                const z = (building.position.z - currentPos.z + viewSize/2) * scale;
+                
+                miniMapCtx.fillRect(x - sizeX/2, z - sizeZ/2, sizeX, sizeZ);
+            }
+            
+            // Draw other vehicles
+            miniMapCtx.fillStyle = '#ff0000';
+            for (const trafficVehicle of vehicles) {
+                const x = (trafficVehicle.position.x - currentPos.x + viewSize/2) * scale;
+                const z = (trafficVehicle.position.z - currentPos.z + viewSize/2) * scale;
+                
+                if (x >= 0 && x <= miniMapCanvas.width && z >= 0 && z <= miniMapCanvas.height) {
+                    miniMapCtx.beginPath();
+                    miniMapCtx.arc(x, z, 3, 0, Math.PI * 2);
+                    miniMapCtx.fill();
+                }
+            }
+            
+            // Draw pedestrians
+            miniMapCtx.fillStyle = '#0000ff';
+            for (const pedestrian of pedestrians) {
+                const x = (pedestrian.position.x - currentPos.x + viewSize/2) * scale;
+                const z = (pedestrian.position.z - currentPos.z + viewSize/2) * scale;
+                
+                if (x >= 0 && x <= miniMapCanvas.width && z >= 0 && z <= miniMapCanvas.height) {
+                    miniMapCtx.beginPath();
+                    miniMapCtx.arc(x, z, 2, 0, Math.PI * 2);
+                    miniMapCtx.fill();
+                }
+            }
+            
+            // Draw player/vehicle
+            miniMapCtx.fillStyle = isInVehicle ? '#ff0000' : '#00ff00';
+            const centerX = miniMapCanvas.width / 2;
+            const centerZ = miniMapCanvas.height / 2;
+            miniMapCtx.beginPath();
+            miniMapCtx.arc(centerX, centerZ, isInVehicle ? 4 : 3, 0, Math.PI * 2);
+            miniMapCtx.fill();
+            
+            // Draw direction indicator
+            const angle = isInVehicle ? vehicle.rotation.y : camera.rotation.y;
+            const indicatorLength = 8;
+            const indicatorX = centerX + Math.sin(angle) * indicatorLength;
+            const indicatorZ = centerZ + Math.cos(angle) * indicatorLength;
+            
+            miniMapCtx.strokeStyle = '#ffffff';
+            miniMapCtx.lineWidth = 2;
+            miniMapCtx.beginPath();
+            miniMapCtx.moveTo(centerX, centerZ);
+            miniMapCtx.lineTo(indicatorX, indicatorZ);
+            miniMapCtx.stroke();
+            
+            // Draw border
+            miniMapCtx.strokeStyle = '#ffffff';
+            miniMapCtx.lineWidth = 2;
+            miniMapCtx.strokeRect(0, 0, miniMapCanvas.width, miniMapCanvas.height);
+        }
+        
+        function toggleMiniMap() {
+            miniMapVisible = !miniMapVisible;
+            document.getElementById('mini-map').style.display = miniMapVisible ? 'block' : 'none';
+        }
+        
+        function createPlayer() {
+            // Simple player model (cube for now)
+            const geometry = new THREE.BoxGeometry(1, 2, 1);
+            const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+            player = new THREE.Mesh(geometry, material);
+            player.castShadow = true;
+            player.position.y = 2;
+            scene.add(player);
+            
+            // Add flashlight to player
+            player.add(flashlight);
+            
+            // Create camera rig
+            const cameraPivot = new THREE.Group();
+            cameraPivot.position.copy(player.position);
+            cameraPivot.add(camera);
+            scene.add(cameraPivot);
+            
+            // Set camera position relative to player
+            camera.position.set(0, 1.5, -5);
+            camera.lookAt(player.position);
+            
+            // Add collision box
+            player.collisionBox = new THREE.Box3().setFromObject(player);
+        }
+        
+        function createVehicle() {
+            // Simple vehicle model (box with wheels)
+            const carBody = new THREE.BoxGeometry(3, 1.5, 5);
+            const carMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const carMesh = new THREE.Mesh(carBody, carMaterial);
+            carMesh.castShadow = true;
+            
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            
+            const wheelFL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelFL.position.set(-1.5, -0.75, -1.5);
+            wheelFL.rotation.z = Math.PI / 2;
+            
+            const wheelFR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelFR.position.set(1.5, -0.75, -1.5);
+            wheelFR.rotation.z = Math.PI / 2;
+            
+            const wheelRL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelRL.position.set(-1.5, -0.75, 1.5);
+            wheelRL.rotation.z = Math.PI / 2;
+            
+            const wheelRR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelRR.position.set(1.5, -0.75, 1.5);
+            wheelRR.rotation.z = Math.PI / 2;
+            
+            // Create vehicle group
+            vehicle = new THREE.Group();
+            vehicle.add(carMesh);
+            vehicle.add(wheelFL);
+            vehicle.add(wheelFR);
+            vehicle.add(wheelRL);
+            vehicle.add(wheelRR);
+            vehicle.position.set(10, 0.75, 0);
+            vehicle.rotation.y = Math.PI / 2;
+            scene.add(vehicle);
+            
+            // Add collision box
+            vehicle.collisionBox = new THREE.Box3().setFromObject(vehicle);
+            
+            // Animation mixer for wheels
+            vehicleMixer = new THREE.AnimationMixer(vehicle);
+        }
+        
+        function generateCity() {
+            // Generate roads
+            for (let i = -10; i <= 10; i++) {
+                // Horizontal roads
+                const roadHGeometry = new THREE.PlaneGeometry(100, 5);
+                const roadHMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                const roadH = new THREE.Mesh(roadHGeometry, roadHMaterial);
+                roadH.position.set(0, 0.01, i * 20);
+                roadH.rotation.x = -Math.PI / 2;
+                scene.add(roadH);
+                roads.push(roadH);
+                
+                // Vertical roads
+                const roadVGeometry = new THREE.PlaneGeometry(5, 100);
+                const roadVMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                const roadV = new THREE.Mesh(roadVGeometry, roadVMaterial);
+                roadV.position.set(i * 20, 0.01, 0);
+                roadV.rotation.x = -Math.PI / 2;
+                scene.add(roadV);
+                roads.push(roadV);
+            }
+            
+            // Generate buildings
+            for (let i = 0; i < 50; i++) {
+                const sizeX = 5 + Math.random() * 10;
+                const sizeZ = 5 + Math.random() * 10;
+                const height = 5 + Math.random() * 20;
+                
+                const buildingGeometry = new THREE.BoxGeometry(sizeX, height, sizeZ);
+                const buildingMaterial = new THREE.MeshStandardMaterial({ 
+                    color: Math.random() * 0xffffff,
+                    roughness: 0.7
+                });
+                const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+                
+                // Position buildings away from roads
+                let x, z;
+                do {
+                    x = -200 + Math.random() * 400;
+                    z = -200 + Math.random() * 400;
+                } while (isOnRoad(x, z));
+                
+                building.position.set(x, height / 2, z);
+                building.castShadow = true;
+                building.receiveShadow = true;
+                scene.add(building);
+                buildings.push(building);
+            }
+            
+            // Generate pedestrians
+            for (let i = 0; i < 20; i++) {
+                createPedestrian();
+            }
+            
+            // Generate other vehicles
+            for (let i = 0; i < 10; i++) {
+                createTrafficVehicle();
+            }
+        }
+        
+        function isOnRoad(x, z) {
+            // Check if position is on a road
+            for (const road of roads) {
+                const roadWidth = road.geometry.parameters.width || road.geometry.parameters.height;
+                const roadLength = road.geometry.parameters.height || road.geometry.parameters.width;
+                
+                const roadX = road.position.x;
+                const roadZ = road.position.z;
+                
+                if (Math.abs(x - roadX) < roadWidth / 2 && Math.abs(z - roadZ) < roadLength / 2) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function createPedestrian() {
+            const geometry = new THREE.BoxGeometry(0.8, 1.8, 0.8);
+            const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+            const pedestrian = new THREE.Mesh(geometry, material);
+            pedestrian.castShadow = true;
+            
+            // Random position not on roads
+            let x, z;
+            do {
+                x = -100 + Math.random() * 200;
+                z = -100 + Math.random() * 200;
+            } while (isOnRoad(x, z));
+            
+            pedestrian.position.set(x, 0.9, z);
+            pedestrian.rotation.y = Math.random() * Math.PI * 2;
+            
+            // AI behavior
+            pedestrian.speed = 1 + Math.random() * 2;
+            pedestrian.directionChangeTime = 0;
+            pedestrian.currentDirection = new THREE.Vector3(
+                Math.sin(pedestrian.rotation.y),
+                0,
+                Math.cos(pedestrian.rotation.y)
+            );
+            
+            scene.add(pedestrian);
+            pedestrians.push(pedestrian);
+        }
+        
+        function createTrafficVehicle() {
+            const carBody = new THREE.BoxGeometry(3, 1.5, 5);
+            const carMaterial = new THREE.MeshStandardMaterial({ 
+                color: Math.random() * 0xffffff 
+            });
+            const carMesh = new THREE.Mesh(carBody, carMaterial);
+            carMesh.castShadow = true;
+            
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            
+            const wheelFL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelFL.position.set(-1.5, -0.75, -1.5);
+            wheelFL.rotation.z = Math.PI / 2;
+            
+            const wheelFR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelFR.position.set(1.5, -0.75, -1.5);
+            wheelFR.rotation.z = Math.PI / 2;
+            
+            const wheelRL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelRL.position.set(-1.5, -0.75, 1.5);
+            wheelRL.rotation.z = Math.PI / 2;
+            
+            const wheelRR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheelRR.position.set(1.5, -0.75, 1.5);
+            wheelRR.rotation.z = Math.PI / 2;
+            
+            // Create vehicle group
+            const trafficVehicle = new THREE.Group();
+            trafficVehicle.add(carMesh);
+            trafficVehicle.add(wheelFL);
+            trafficVehicle.add(wheelFR);
+            trafficVehicle.add(wheelRL);
+            trafficVehicle.add(wheelRR);
+            
+            // Position on road
+            const road = roads[Math.floor(Math.random() * roads.length)];
+            let x, z;
+            
+            if (road.geometry.parameters.width > road.geometry.parameters.height) {
+                // Horizontal road
+                x = -50 + Math.random() * 100;
+                z = road.position.z;
+                trafficVehicle.rotation.y = Math.random() > 0.5 ? 0 : Math.PI;
+            } else {
+                // Vertical road
+                x = road.position.x;
+                z = -50 + Math.random() * 100;
+                trafficVehicle.rotation.y = Math.random() > 0.5 ? Math.PI / 2 : -Math.PI / 2;
+            }
+            
+            trafficVehicle.position.set(x, 0.75, z);
+            trafficVehicle.speed = 5 + Math.random() * 10;
+            
+            scene.add(trafficVehicle);
+            vehicles.push(trafficVehicle);
+        }
+        
+        function startGame() {
+            document.getElementById('menu').style.display = 'none';
+            controls.enabled = true;
+        }
+        
+        function changeRadioStation() {
+            currentRadioStation = (currentRadioStation + 1) % radioStations.length;
+            document.getElementById('radio-station').textContent = `Radio: ${radioStations[currentRadioStation]}`;
+            
+            // In a real game, you would play different audio tracks here
+        }
+        
+        function enterVehicle() {
+            if (isInVehicle) return;
+            
+            // Check if player is close enough to a vehicle
+            const playerPosition = player.position.clone();
+            const vehiclePosition = vehicle.position.clone();
+            
+            if (playerPosition.distanceTo(vehiclePosition) < 5) {
+                isInVehicle = true;
+                player.visible = false;
+                document.getElementById('vehicle-hud').style.display = 'block';
+                
+                // Position camera for vehicle view
+                camera.position.set(0, 2, -8);
+                camera.lookAt(new THREE.Vector3(0, 0, 10));
+            }
+        }
+        
+        function exitVehicle() {
+            if (!isInVehicle) return;
+            
+            isInVehicle = false;
+            player.visible = true;
+            document.getElementById('vehicle-hud').style.display = 'none';
+            
+            // Position player next to vehicle
+            const exitOffset = new THREE.Vector3(3, 0, 0);
+            exitOffset.applyQuaternion(vehicle.rotation);
+            player.position.copy(vehicle.position).add(exitOffset);
+            player.position.y = 0;
+            
+            // Position camera for player view
+            camera.position.set(0, 1.5, -5);
+        }
+        
+        function toggleFlashlight() {
+            flashlight.visible = !flashlight.visible;
+        }
+        
+        function updateHUD() {
+            // Update health bar
+            document.getElementById('health-bar').style.width = `${health}%`;
+            
+            // Update money display
+            document.getElementById('money').textContent = `$${money}`;
+            
+            // Update wanted level
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                stars += i < wantedLevel ? '★' : '☆';
+            }
+            document.getElementById('wanted-level').textContent = `Wanted: ${stars}`;
+            
+            // Update time
+            const ampm = currentHour >= 12 ? 'PM' : 'AM';
+            const displayHour = currentHour % 12 || 12;
+            document.getElementById('time').textContent = `${displayHour}:00 ${ampm}`;
+            
+            // Update vehicle HUD if in vehicle
+            if (isInVehicle) {
+                const speed = Math.round(velocity.length() * 10);
+                document.getElementById('speed').textContent = `Speed: ${speed} mph`;
+                
+                // Simple gear calculation
+                let gear;
+                if (speed === 0) gear = 'N';
+                else if (speed < 10) gear = '1';
+                else if (speed < 20) gear = '2';
+                else if (speed < 30) gear = '3';
+                else if (speed < 40) gear = '4';
+                else gear = '5';
+                document.getElementById('gear').textContent = `Gear: ${gear}`;
+            }
+        }
+        
+        function updateDayNightCycle(delta) {
+            // Update time of day
+            currentHour += delta * 0.1;
+            if (currentHour >= 24) currentHour = 0;
+            
+            // Check if day/night changed
+            const wasDay = isDay;
+            isDay = currentHour >= 6 && currentHour < 18;
+            
+            if (wasDay !== isDay) {
+                // Change ambient light based on time
+                if (isDay) {
+                    scene.fog.color.setHex(0xcccccc);
+                    scene.background = new THREE.Color(0x87CEEB);
+                } else {
+                    scene.fog.color.setHex(0x111111);
+                    scene.background = new THREE.Color(0x000033);
+                }
+            }
+        }
+        
+        function updatePedestrians(delta) {
+            for (const pedestrian of pedestrians) {
+                // Change direction randomly
+                pedestrian.directionChangeTime -= delta;
+                if (pedestrian.directionChangeTime <= 0) {
+                    pedestrian.rotation.y = Math.random() * Math.PI * 2;
+                    pedestrian.currentDirection.set(
+                        Math.sin(pedestrian.rotation.y),
+                        0,
+                        Math.cos(pedestrian.rotation.y)
+                    );
+                    pedestrian.directionChangeTime = 2 + Math.random() * 5;
+                }
+                
+                // Move pedestrian
+                const newPosition = pedestrian.position.clone().add(
+                    pedestrian.currentDirection.clone().multiplyScalar(pedestrian.speed * delta)
+                );
+                
+                // Simple collision avoidance
+                let canMove = true;
+                for (const building of buildings) {
+                    const buildingBox = new THREE.Box3().setFromObject(building);
+                    if (buildingBox.containsPoint(newPosition)) {
+                        canMove = false;
+                        break;
+                    }
+                }
+                
+                if (canMove && !isOnRoad(newPosition.x, newPosition.z)) {
+                    pedestrian.position.copy(newPosition);
+                } else {
+                    // Change direction if can't move
+                    pedestrian.directionChangeTime = 0;
+                }
+            }
+        }
+        
+        function updateTraffic(delta) {
+            for (const trafficVehicle of vehicles) {
+                // Move vehicle forward
+                const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(trafficVehicle.quaternion);
+                trafficVehicle.position.add(direction.multiplyScalar(trafficVehicle.speed * delta));
+                
+                // If vehicle goes out of bounds, reposition it
+                if (Math.abs(trafficVehicle.position.x) > 100 || Math.abs(trafficVehicle.position.z) > 100) {
+                    const road = roads[Math.floor(Math.random() * roads.length)];
+                    
+                    if (road.geometry.parameters.width > road.geometry.parameters.height) {
+                        // Horizontal road
+                        trafficVehicle.position.x = -50 + Math.random() * 100;
+                        trafficVehicle.position.z = road.position.z;
+                        trafficVehicle.rotation.y = Math.random() > 0.5 ? 0 : Math.PI;
+                    } else {
+                        // Vertical road
+                        trafficVehicle.position.x = road.position.x;
+                        trafficVehicle.position.z = -50 + Math.random() * 100;
+                        trafficVehicle.rotation.y = Math.random() > 0.5 ? Math.PI / 2 : -Math.PI / 2;
+                    }
+                }
+            }
+        }
+        
+        function checkCollisions() {
+            // Check player/vehicle collisions with environment
+            if (isInVehicle) {
+                const vehicleBox = new THREE.Box3().setFromObject(vehicle);
+                
+                // Check collisions with buildings
+                for (const building of buildings) {
+                    const buildingBox = new THREE.Box3().setFromObject(building);
+                    if (vehicleBox.intersectsBox(buildingBox)) {
+                        // Simple collision response - stop vehicle
+                        velocity.set(0, 0, 0);
+                        
+                        // Increase wanted level if hitting buildings
+                        wantedLevel = Math.min(wantedLevel + 1, 5);
+                        break;
+                    }
+                }
+                
+                // Check collisions with other vehicles
+                for (const trafficVehicle of vehicles) {
+                    if (trafficVehicle === vehicle) continue;
+                    
+                    const otherVehicleBox = new THREE.Box3().setFromObject(trafficVehicle);
+                    if (vehicleBox.intersectsBox(otherVehicleBox)) {
+                        // Collision with another vehicle
+                        velocity.set(0, 0, 0);
+                        wantedLevel = Math.min(wantedLevel + 1, 5);
+                        
+                        // Simple damage system
+                        health = Math.max(health - 10, 0);
+                        break;
+                    }
+                }
+            } else {
+                // Player collisions
+                const playerBox = new THREE.Box3().setFromObject(player);
+                
+                // Check collisions with vehicles
+                for (const trafficVehicle of vehicles) {
+                    const vehicleBox = new THREE.Box3().setFromObject(trafficVehicle);
+                    if (playerBox.intersectsBox(vehicleBox)) {
+                        // Hit by a vehicle
+                        health = Math.max(health - 30, 0);
+                        wantedLevel = Math.min(wantedLevel + 2, 5);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function onKeyDown(event) {
+            switch (event.code) {
+                case 'KeyW':
+                case 'ArrowUp':
+                    moveForward = true;
+                    break;
+                case 'KeyA':
+                case 'ArrowLeft':
+                    moveLeft = true;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                    moveBackward = true;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    moveRight = true;
+                    break;
+                case 'Space':
+                    if (canJump && !isInVehicle) {
+                        velocity.y += jumpHeight;
+                        canJump = false;
+                    }
+                    break;
+                case 'KeyE':
+                    if (isInVehicle) {
+                        exitVehicle();
+                    } else {
+                        enterVehicle();
+                    }
+                    break;
+                case 'KeyF':
+                    toggleFlashlight();
+                    break;
+                case 'KeyM':
+                    toggleMiniMap();
+                    break;
+            }
+        }
+        
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'KeyW':
+                case 'ArrowUp':
+                    moveForward = false;
+                    break;
+                case 'KeyA':
+                case 'ArrowLeft':
+                    moveLeft = false;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                    moveBackward = false;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    moveRight = false;
+                    break;
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            
+            if (vehicleMixer) vehicleMixer.update(delta);
+            
+            // Update player or vehicle movement
+            if (isInVehicle) {
+                // Vehicle controls
+                velocity.x -= velocity.x * 0.1 * delta;
+                velocity.z -= velocity.z * 0.1 * delta;
+                
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+                
+                if (moveForward || moveBackward) {
+                    velocity.z -= direction.z * vehicleSpeed * delta;
+                }
+                if (moveLeft || moveRight) {
+                    velocity.x -= direction.x * vehicleSpeed * delta;
+                    
+                    // Simple steering
+                    const steerAmount = direction.x * 0.05 * delta;
+                    vehicle.rotation.y += steerAmount;
+                }
+                
+                // Apply velocity to vehicle
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(vehicle.quaternion);
+                vehicle.position.add(forward.multiplyScalar(velocity.z * delta));
+                
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(vehicle.quaternion);
+                vehicle.position.add(right.multiplyScalar(velocity.x * delta));
+                
+                // Update camera position to follow vehicle
+                const cameraPivot = camera.parent;
+                cameraPivot.position.copy(vehicle.position);
+                cameraPivot.rotation.copy(vehicle.rotation);
+            } else {
+                // Player controls
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+                
+                if (moveForward || moveBackward) velocity.z -= direction.z * moveSpeed * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * moveSpeed * delta;
+                
+                // Apply gravity
+                velocity.y -= 9.8 * delta;
+                
+                // Move player
+                player.translateX(velocity.x * delta);
+                player.translateZ(velocity.z * delta);
+                player.position.y += velocity.y * delta;
+                
+                // Simple ground collision
+                if (player.position.y < 1) {
+                    player.position.y = 1;
+                    velocity.y = 0;
+                    canJump = true;
+                }
+                
+                // Update camera position to follow player
+                const cameraPivot = camera.parent;
+                cameraPivot.position.copy(player.position);
+            }
+            
+            // Update game systems
+            updateDayNightCycle(delta);
+            updatePedestrians(delta);
+            updateTraffic(delta);
+            checkCollisions();
+            updateHUD();
+            updateMiniMap();
+            
+            // Update controls
+            controls.update();
+            
+            // Render scene
+            renderer.render(scene, camera);
+        }
+        
+        // Start the game
+        init();
+    </script>
+</body>
+</html>

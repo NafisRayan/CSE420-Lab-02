@@ -2,97 +2,162 @@ At line no: 1 type_specifier : INT
 
 int
 
-New ScopeTable with id 2 created
-New ScopeTable with id 3 created
+At line no: 1 declaration_list : ID 
+
+x
+
+At line no: 1 declaration_list : declaration_list COMMA ID 
+
+x,y
+
+At line no: 1 declaration_list : declaration_list COMMA ID 
+
+x,y,z
+
+At line no: 1 var_declaration : type_specifier declaration_list SEMICOLON 
+
+int x,y,z;
+
+At line no: 1 unit : var_declaration 
+
+int x,y,z;
+
+At line no: 1 program : unit 
+
+int x,y,z;
+
+At line no: 1 type_specifier : FLOAT 
+
+float
+
+At line no: 1 declaration_list : ID 
+
+a
+
+At line no: 1 var_declaration : type_specifier declaration_list SEMICOLON 
+
+float a;
+
+At line no: 1 unit : var_declaration 
+
+float a;
+
+At line no: 1 program : program unit 
+
+int x,y,z;
+float a;
+
 At line no: 3 type_specifier : INT 
 
 int
 
-At line no: 3 declaration_list : ID 
+At line no: 3 type_specifier : INT 
 
-a
+int
 
-At line no: 3 var_declaration : type_specifier declaration_list SEMICOLON 
+At line no: 3 parameter_list : type_specifier ID 
 
-int a;
+int c
 
-At line no: 3 statement : var_declaration 
+At line no: 3 type_specifier : INT 
 
-int a;
+int
 
-At line no: 3 statements : statement 
+At line no: 3 parameter_list : parameter_list COMMA type_specifier ID 
 
-int a;
+int c,int d
 
-At line no: 5 variable : ID 
+New ScopeTable with id 2 created
+New ScopeTable with id 3 created
+At line no: 4 factor : CONST_INT 
 
-a
+7
 
-At line no: 5 factor : variable 
+At line no: 4 unary_expression : factor 
 
-a
+7
 
-At line no: 5 unary_expression : factor 
+At line no: 4 term : unary_expression 
 
-a
+7
 
-At line no: 5 term : unary_expression 
+At line no: 4 simple_expression : term 
 
-a
+7
 
-At line no: 5 simple_expression : term 
+At line no: 4 rel_expression : simple_expression 
 
-a
+7
 
-At line no: 5 factor : CONST_INT 
+At line no: 4 logic_expression : rel_expression 
 
-1
+7
 
-At line no: 5 unary_expression : factor 
+At line no: 4 expression : logic_expression 
 
-1
+7
 
-At line no: 5 term : unary_expression 
+At line no: 4 statement : RETURN expression SEMICOLON 
 
-1
+return 7;
 
-At line no: 5 simple_expression : term 
+At line no: 4 statements : statement 
 
-1
+return 7;
 
-At line no: 5 rel_expression : simple_expression RELOP simple_expression 
+At line no: 5 compound_statement : LCURL statements RCURL 
 
-a>1
+{
+return 7;
+}
 
-At line no: 5 logic_expression : rel_expression 
+ScopeTable with id 3 removed
+At line no: 5 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
 
-a>1
+int func(int c,int d)
+{
+return 7;
+}
 
-At line no: 5 expression : logic_expression 
+ScopeTable with id 2 removed
+At line no: 5 unit : func_definition 
 
-a>1
+int func(int c,int d)
+{
+return 7;
+}
 
-New ScopeTable with id 4 created
-At line no: 6 type_specifier : FLOAT 
+At line no: 5 program : program unit 
+
+int x,y,z;
+float a;
+int func(int c,int d)
+{
+return 7;
+}
+
+At line no: 7 type_specifier : INT 
+
+int
+
+At line no: 7 type_specifier : INT 
+
+int
+
+At line no: 7 parameter_list : type_specifier ID 
+
+int a
+
+At line no: 7 type_specifier : FLOAT 
 
 float
 
-At line no: 6 declaration_list : ID 
+At line no: 7 parameter_list : parameter_list COMMA type_specifier ID 
 
-a
+int a,float b
 
-At line no: 6 var_declaration : type_specifier declaration_list SEMICOLON 
-
-float a;
-
-At line no: 6 statement : var_declaration 
-
-float a;
-
-At line no: 6 statements : statement 
-
-float a;
-
+New ScopeTable with id 4 created
+New ScopeTable with id 5 created
 At line no: 8 variable : ID 
 
 a
@@ -115,191 +180,202 @@ a
 
 At line no: 8 factor : CONST_INT 
 
-1
+3
 
 At line no: 8 unary_expression : factor 
 
-1
+3
 
 At line no: 8 term : unary_expression 
 
-1
+3
 
-At line no: 8 simple_expression : term 
+At line no: 8 simple_expression : simple_expression ADDOP term 
 
-1
+a+3
 
-At line no: 8 rel_expression : simple_expression RELOP simple_expression 
+At line no: 8 rel_expression : simple_expression 
 
-a>1
+a+3
 
 At line no: 8 logic_expression : rel_expression 
 
-a>1
+a+3
 
 At line no: 8 expression : logic_expression 
 
-a>1
+a+3
 
-New ScopeTable with id 5 created
-At line no: 9 type_specifier : INT 
+At line no: 8 statement : RETURN expression SEMICOLON 
+
+return a+3;
+
+At line no: 8 statements : statement 
+
+return a+3;
+
+At line no: 9 compound_statement : LCURL statements RCURL 
+
+{
+return a+3;
+}
+
+ScopeTable with id 5 removed
+At line no: 9 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
+
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+
+ScopeTable with id 4 removed
+At line no: 9 unit : func_definition 
+
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+
+At line no: 9 program : program unit 
+
+int x,y,z;
+float a;
+int func(int c,int d)
+{
+return 7;
+}
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+
+At line no: 12 type_specifier : VOID 
+
+void
+
+At line no: 12 type_specifier : INT 
 
 int
 
-At line no: 9 declaration_list : ID 
+At line no: 12 parameter_list : type_specifier ID 
 
-a
-
-At line no: 9 var_declaration : type_specifier declaration_list SEMICOLON 
-
-int a;
-
-At line no: 9 statement : var_declaration 
-
-int a;
-
-At line no: 9 statements : statement 
-
-int a;
-
-At line no: 11 variable : ID 
-
-a
-
-At line no: 11 factor : variable 
-
-a
-
-At line no: 11 unary_expression : factor 
-
-a
-
-At line no: 11 term : unary_expression 
-
-a
-
-At line no: 11 simple_expression : term 
-
-a
-
-At line no: 11 factor : CONST_INT 
-
-1
-
-At line no: 11 unary_expression : factor 
-
-1
-
-At line no: 11 term : unary_expression 
-
-1
-
-At line no: 11 simple_expression : term 
-
-1
-
-At line no: 11 rel_expression : simple_expression RELOP simple_expression 
-
-a>1
-
-At line no: 11 logic_expression : rel_expression 
-
-a>1
-
-At line no: 11 expression : logic_expression 
-
-a>1
+int a
 
 New ScopeTable with id 6 created
-At line no: 12 type_specifier : FLOAT 
+New ScopeTable with id 7 created
+At line no: 13 variable : ID 
+
+y
+
+At line no: 13 factor : CONST_INT 
+
+6
+
+At line no: 13 unary_expression : factor 
+
+6
+
+At line no: 13 term : unary_expression 
+
+6
+
+At line no: 13 simple_expression : term 
+
+6
+
+At line no: 13 rel_expression : simple_expression 
+
+6
+
+At line no: 13 logic_expression : rel_expression 
+
+6
+
+At line no: 13 expression : variable ASSIGNOP logic_expression 
+
+y=6
+
+At line no: 13 expression_statement : expression SEMICOLON 
+
+y=6;
+
+At line no: 13 statement : expression_statement 
+
+y=6;
+
+At line no: 13 statements : statement 
+
+y=6;
+
+At line no: 14 compound_statement : LCURL statements RCURL 
+
+{
+y=6;
+}
+
+ScopeTable with id 7 removed
+At line no: 14 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
+
+void foo(int a)
+{
+y=6;
+}
+
+ScopeTable with id 6 removed
+At line no: 14 unit : func_definition 
+
+void foo(int a)
+{
+y=6;
+}
+
+At line no: 14 program : program unit 
+
+int x,y,z;
+float a;
+int func(int c,int d)
+{
+return 7;
+}
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+void foo(int a)
+{
+y=6;
+}
+
+At line no: 16 type_specifier : INT 
+
+int
+
+At line no: 16 type_specifier : INT 
+
+int
+
+At line no: 16 parameter_list : type_specifier ID 
+
+int a
+
+At line no: 16 type_specifier : INT 
+
+int
+
+At line no: 16 parameter_list : parameter_list COMMA type_specifier ID 
+
+int a,int a
+
+At line no: 16 type_specifier : FLOAT 
 
 float
 
-At line no: 12 declaration_list : ID 
+At line no: 16 parameter_list : parameter_list COMMA type_specifier ID 
 
-a
+int a,int a,float b
 
-At line no: 12 var_declaration : type_specifier declaration_list SEMICOLON 
-
-float a;
-
-At line no: 12 statement : var_declaration 
-
-float a;
-
-At line no: 12 statements : statement 
-
-float a;
-
-At line no: 14 variable : ID 
-
-a
-
-At line no: 14 factor : variable 
-
-a
-
-At line no: 14 unary_expression : factor 
-
-a
-
-At line no: 14 term : unary_expression 
-
-a
-
-At line no: 14 simple_expression : term 
-
-a
-
-At line no: 14 factor : CONST_INT 
-
-1
-
-At line no: 14 unary_expression : factor 
-
-1
-
-At line no: 14 term : unary_expression 
-
-1
-
-At line no: 14 simple_expression : term 
-
-1
-
-At line no: 14 rel_expression : simple_expression RELOP simple_expression 
-
-a>1
-
-At line no: 14 logic_expression : rel_expression 
-
-a>1
-
-At line no: 14 expression : logic_expression 
-
-a>1
-
-New ScopeTable with id 7 created
-At line no: 15 type_specifier : INT 
-
-int
-
-At line no: 15 declaration_list : ID 
-
-a
-
-At line no: 15 var_declaration : type_specifier declaration_list SEMICOLON 
-
-int a;
-
-At line no: 15 statement : var_declaration 
-
-int a;
-
-At line no: 15 statements : statement 
-
-int a;
-
+New ScopeTable with id 8 created
+New ScopeTable with id 9 created
 At line no: 17 variable : ID 
 
 a
@@ -322,471 +398,2221 @@ a
 
 At line no: 17 factor : CONST_INT 
 
-1
+2
 
 At line no: 17 unary_expression : factor 
 
-1
+2
 
 At line no: 17 term : unary_expression 
 
-1
+2
 
-At line no: 17 simple_expression : term 
+At line no: 17 simple_expression : simple_expression ADDOP term 
 
-1
+a+2
 
-At line no: 17 rel_expression : simple_expression RELOP simple_expression 
+At line no: 17 rel_expression : simple_expression 
 
-a>1
+a+2
 
 At line no: 17 logic_expression : rel_expression 
 
-a>1
+a+2
 
 At line no: 17 expression : logic_expression 
 
-a>1
+a+2
 
-New ScopeTable with id 8 created
-At line no: 18 type_specifier : FLOAT 
+At line no: 17 statement : RETURN expression SEMICOLON 
 
-float
+return a+2;
 
-At line no: 18 declaration_list : ID 
+At line no: 17 statements : statement 
 
-a
+return a+2;
 
-At line no: 18 var_declaration : type_specifier declaration_list SEMICOLON 
-
-float a;
-
-At line no: 18 statement : var_declaration 
-
-float a;
-
-At line no: 18 statements : statement 
-
-float a;
-
-At line no: 19 compound_statement : LCURL statements RCURL 
+At line no: 18 compound_statement : LCURL statements RCURL 
 
 {
-float a;
+return a+2;
+}
+
+ScopeTable with id 9 removed
+At line no: 18 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
+
+int foo2(int a,int a,float b)
+{
+return a+2;
 }
 
 ScopeTable with id 8 removed
-At line no: 19 statement : compound_statement 
+At line no: 18 unit : func_definition 
 
+int foo2(int a,int a,float b)
 {
+return a+2;
+}
+
+At line no: 18 program : program unit 
+
+int x,y,z;
 float a;
+int func(int c,int d)
+{
+return 7;
+}
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+void foo(int a)
+{
+y=6;
+}
+int foo2(int a,int a,float b)
+{
+return a+2;
 }
 
-At line no: 20 statement : IF LPAREN expression RPAREN statement 
+At line no: 20 type_specifier : VOID 
 
-if(a>1)
-{
-float a;
-}
+void
 
-At line no: 20 statements : statements statement 
+At line no: 20 type_specifier : INT 
 
-int a;
-if(a>1)
-{
-float a;
-}
+int
 
-At line no: 20 compound_statement : LCURL statements RCURL 
+At line no: 20 parameter_list : type_specifier ID 
 
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
+int a
 
-ScopeTable with id 7 removed
-At line no: 20 statement : compound_statement 
+At line no: 20 type_specifier : INT 
 
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
+int
 
-At line no: 21 statement : IF LPAREN expression RPAREN statement 
+At line no: 20 parameter_list : parameter_list COMMA type_specifier ID 
 
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
+int a,int b
 
-At line no: 21 statements : statements statement 
+New ScopeTable with id 10 created
+New ScopeTable with id 11 created
+At line no: 21 variable : ID 
 
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
+y
 
-At line no: 21 compound_statement : LCURL statements RCURL 
+At line no: 21 factor : CONST_INT 
 
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+7
 
-ScopeTable with id 6 removed
-At line no: 21 statement : compound_statement 
+At line no: 21 unary_expression : factor 
 
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+7
 
-At line no: 22 statement : IF LPAREN expression RPAREN statement 
+At line no: 21 term : unary_expression 
 
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+7
 
-At line no: 22 statements : statements statement 
+At line no: 21 simple_expression : term 
 
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+7
+
+At line no: 21 rel_expression : simple_expression 
+
+7
+
+At line no: 21 logic_expression : rel_expression 
+
+7
+
+At line no: 21 expression : variable ASSIGNOP logic_expression 
+
+y=7
+
+At line no: 21 expression_statement : expression SEMICOLON 
+
+y=7;
+
+At line no: 21 statement : expression_statement 
+
+y=7;
+
+At line no: 21 statements : statement 
+
+y=7;
 
 At line no: 22 compound_statement : LCURL statements RCURL 
 
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+y=7;
 }
 
-ScopeTable with id 5 removed
-At line no: 22 statement : compound_statement 
+ScopeTable with id 11 removed
+At line no: 22 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
 
+void foo3(int a,int b)
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+y=7;
 }
 
-At line no: 23 statement : IF LPAREN expression RPAREN statement 
+ScopeTable with id 10 removed
+At line no: 22 unit : func_definition 
 
-if(a>1)
+void foo3(int a,int b)
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
+y=7;
 }
 
-At line no: 23 statements : statements statement 
+At line no: 22 program : program unit 
 
+int x,y,z;
 float a;
-if(a>1)
+int func(int c,int d)
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
+return 7;
 }
-}
-}
-}
-
-At line no: 23 compound_statement : LCURL statements RCURL 
-
+int correct_foo(int a,float b)
 {
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
+return a+3;
 }
+void foo(int a)
+{
+y=6;
 }
+int foo2(int a,int a,float b)
+{
+return a+2;
 }
-}
+void foo3(int a,int b)
+{
+y=7;
 }
 
-ScopeTable with id 4 removed
-At line no: 23 statement : compound_statement 
+At line no: 24 type_specifier : INT 
+
+int
+
+At line no: 24 type_specifier : INT 
+
+int
+
+At line no: 24 parameter_list : type_specifier ID 
+
+int d
+
+Error at line 24: 'z' redeclared as a function
+New ScopeTable with id 12 created
+New ScopeTable with id 13 created
+At line no: 25 variable : ID 
+
+d
+
+Error at line 25: Undeclared variable 'd'
+At line no: 25 factor : variable 
+
+d
+
+At line no: 25 unary_expression : factor 
+
+d
+
+At line no: 25 term : unary_expression 
+
+d
+
+At line no: 25 simple_expression : term 
+
+d
+
+At line no: 25 rel_expression : simple_expression 
+
+d
+
+At line no: 25 logic_expression : rel_expression 
+
+d
+
+At line no: 25 expression : logic_expression 
+
+d
+
+At line no: 25 statement : RETURN expression SEMICOLON 
+
+return d;
+
+At line no: 25 statements : statement 
+
+return d;
+
+At line no: 26 compound_statement : LCURL statements RCURL 
 
 {
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
-}
+return d;
 }
 
-At line no: 24 statement : IF LPAREN expression RPAREN statement 
+ScopeTable with id 13 removed
+At line no: 26 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
 
-if(a>1)
+int z(int d)
 {
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
-}
+return d;
 }
 
-At line no: 24 statements : statements statement 
+ScopeTable with id 12 removed
+At line no: 26 unit : func_definition 
 
-int a;
-if(a>1)
+int z(int d)
 {
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
-}
+return d;
 }
 
-At line no: 24 compound_statement : LCURL statements RCURL 
+At line no: 26 program : program unit 
 
-{
-int a;
-if(a>1)
-{
+int x,y,z;
 float a;
-if(a>1)
+int func(int c,int d)
 {
-int a;
-if(a>1)
+return 7;
+}
+int correct_foo(int a,float b)
 {
-float a;
-if(a>1)
+return a+3;
+}
+void foo(int a)
 {
-int a;
-if(a>1)
+y=6;
+}
+int foo2(int a,int a,float b)
 {
-float a;
+return a+2;
 }
-}
-}
-}
-}
-}
-
-ScopeTable with id 3 removed
-At line no: 24 func_definition : type_specifier ID LPAREN RPAREN compound_statement 
-
-int func()
+void foo3(int a,int b)
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
+y=7;
 }
-}
-}
-}
-}
+int z(int d)
+{
+return d;
 }
 
-ScopeTable with id 2 removed
-At line no: 24 unit : func_definition 
+At line no: 28 type_specifier : INT 
 
-int func()
+int
+
+At line no: 28 type_specifier : INT 
+
+int
+
+At line no: 28 parameter_list : type_specifier ID 
+
+int a
+
+New ScopeTable with id 14 created
+New ScopeTable with id 15 created
+At line no: 29 variable : ID 
+
+a
+
+At line no: 29 factor : variable 
+
+a
+
+At line no: 29 unary_expression : factor 
+
+a
+
+At line no: 29 term : unary_expression 
+
+a
+
+At line no: 29 simple_expression : term 
+
+a
+
+At line no: 29 rel_expression : simple_expression 
+
+a
+
+At line no: 29 logic_expression : rel_expression 
+
+a
+
+At line no: 29 expression : logic_expression 
+
+a
+
+At line no: 29 statement : RETURN expression SEMICOLON 
+
+return a;
+
+At line no: 29 statements : statement 
+
+return a;
+
+At line no: 30 compound_statement : LCURL statements RCURL 
+
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
-}
-}
+return a;
 }
 
-At line no: 24 program : unit 
+ScopeTable with id 15 removed
+At line no: 30 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
 
-int func()
+int var(int a)
 {
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-if(a>1)
-{
-int a;
-if(a>1)
-{
-float a;
-}
-}
-}
-}
-}
+return a;
 }
 
-At line no: 24 start : program 
+ScopeTable with id 14 removed
+At line no: 30 unit : func_definition 
+
+int var(int a)
+{
+return a;
+}
+
+At line no: 30 program : program unit 
+
+int x,y,z;
+float a;
+int func(int c,int d)
+{
+return 7;
+}
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+void foo(int a)
+{
+y=6;
+}
+int foo2(int a,int a,float b)
+{
+return a+2;
+}
+void foo3(int a,int b)
+{
+y=7;
+}
+int z(int d)
+{
+return d;
+}
+int var(int a)
+{
+return a;
+}
+
+At line no: 32 type_specifier : VOID 
+
+void
+
+At line no: 32 type_specifier : INT 
+
+int
+
+At line no: 32 parameter_list : type_specifier ID 
+
+int a
+
+New ScopeTable with id 16 created
+New ScopeTable with id 17 created
+At line no: 33 variable : ID 
+
+a
+
+At line no: 33 factor : variable 
+
+a
+
+At line no: 33 unary_expression : factor 
+
+a
+
+At line no: 33 term : unary_expression 
+
+a
+
+At line no: 33 simple_expression : term 
+
+a
+
+At line no: 33 factor : CONST_INT 
+
+3
+
+At line no: 33 unary_expression : factor 
+
+3
+
+At line no: 33 term : unary_expression 
+
+3
+
+At line no: 33 simple_expression : simple_expression ADDOP term 
+
+a+3
+
+At line no: 33 rel_expression : simple_expression 
+
+a+3
+
+At line no: 33 logic_expression : rel_expression 
+
+a+3
+
+At line no: 33 expression : logic_expression 
+
+a+3
+
+At line no: 33 statement : RETURN expression SEMICOLON 
+
+return a+3;
+
+At line no: 33 statements : statement 
+
+return a+3;
+
+At line no: 34 compound_statement : LCURL statements RCURL 
+
+{
+return a+3;
+}
+
+ScopeTable with id 17 removed
+At line no: 34 func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement 
+
+void foo4(int a)
+{
+return a+3;
+}
+
+ScopeTable with id 16 removed
+At line no: 34 unit : func_definition 
+
+void foo4(int a)
+{
+return a+3;
+}
+
+At line no: 34 program : program unit 
+
+int x,y,z;
+float a;
+int func(int c,int d)
+{
+return 7;
+}
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+void foo(int a)
+{
+y=6;
+}
+int foo2(int a,int a,float b)
+{
+return a+2;
+}
+void foo3(int a,int b)
+{
+y=7;
+}
+int z(int d)
+{
+return d;
+}
+int var(int a)
+{
+return a;
+}
+void foo4(int a)
+{
+return a+3;
+}
+
+At line no: 36 type_specifier : INT 
+
+int
+
+New ScopeTable with id 18 created
+New ScopeTable with id 19 created
+At line no: 37 type_specifier : INT 
+
+int
+
+At line no: 37 declaration_list : ID 
+
+a
+
+At line no: 37 declaration_list : declaration_list COMMA ID 
+
+a,b
+
+At line no: 37 declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD 
+
+a,b,c[4]
+
+At line no: 37 declaration_list : declaration_list COMMA ID 
+
+a,b,c[4],dd
+
+At line no: 37 declaration_list : declaration_list COMMA ID 
+
+a,b,c[4],dd,ee
+
+At line no: 37 var_declaration : type_specifier declaration_list SEMICOLON 
+
+int a,b,c[4],dd,ee;
+
+At line no: 37 statement : var_declaration 
+
+int a,b,c[4],dd,ee;
+
+At line no: 37 statements : statement 
+
+int a,b,c[4],dd,ee;
+
+At line no: 38 type_specifier : VOID 
+
+void
+
+At line no: 38 declaration_list : ID 
+
+e
+
+At line no: 38 var_declaration : type_specifier declaration_list SEMICOLON 
+
+void e;
+
+At line no: 38 statement : var_declaration 
+
+void e;
+
+At line no: 38 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+
+At line no: 39 type_specifier : FLOAT 
+
+float
+
+At line no: 39 declaration_list : ID 
+
+a
+
+Error at line 39: Multiple declaration of 'a' in the same scope
+At line no: 39 declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD 
+
+a,c[7]
+
+Error at line 39: Multiple declaration of 'c' in the same scope
+At line no: 39 var_declaration : type_specifier declaration_list SEMICOLON 
+
+float a,c[7];
+
+At line no: 39 statement : var_declaration 
+
+float a,c[7];
+
+At line no: 39 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+
+At line no: 41 factor : CONST_FLOAT 
+
+2.5
+
+At line no: 41 unary_expression : factor 
+
+2.5
+
+At line no: 41 term : unary_expression 
+
+2.5
+
+At line no: 41 simple_expression : term 
+
+2.5
+
+At line no: 41 rel_expression : simple_expression 
+
+2.5
+
+At line no: 41 logic_expression : rel_expression 
+
+2.5
+
+At line no: 41 arguments : logic_expression 
+
+2.5
+
+At line no: 41 factor : CONST_FLOAT 
+
+3.5
+
+At line no: 41 unary_expression : factor 
+
+3.5
+
+At line no: 41 term : unary_expression 
+
+3.5
+
+At line no: 41 simple_expression : term 
+
+3.5
+
+At line no: 41 rel_expression : simple_expression 
+
+3.5
+
+At line no: 41 logic_expression : rel_expression 
+
+3.5
+
+At line no: 41 arguments : arguments COMMA logic_expression 
+
+2.5,3.5
+
+At line no: 41 argument_list : arguments 
+
+2.5,3.5
+
+At line no: 41 factor : ID LPAREN argument_list RPAREN 
+
+func(2.5,3.5)
+
+Warning at line 41: Possible loss of precision in argument 1 of call to 'func'
+Warning at line 41: Possible loss of precision in argument 2 of call to 'func'
+At line no: 41 unary_expression : factor 
+
+func(2.5,3.5)
+
+At line no: 41 term : unary_expression 
+
+func(2.5,3.5)
+
+At line no: 41 simple_expression : term 
+
+func(2.5,3.5)
+
+At line no: 41 rel_expression : simple_expression 
+
+func(2.5,3.5)
+
+At line no: 41 logic_expression : rel_expression 
+
+func(2.5,3.5)
+
+At line no: 41 expression : logic_expression 
+
+func(2.5,3.5)
+
+At line no: 41 expression_statement : expression SEMICOLON 
+
+func(2.5,3.5);
+
+At line no: 41 statement : expression_statement 
+
+func(2.5,3.5);
+
+At line no: 41 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+
+At line no: 44 variable : ID 
+
+a
+
+At line no: 44 variable : ID 
+
+a
+
+At line no: 44 factor : variable 
+
+a
+
+At line no: 44 unary_expression : factor 
+
+a
+
+At line no: 44 term : unary_expression 
+
+a
+
+At line no: 44 simple_expression : term 
+
+a
+
+At line no: 44 rel_expression : simple_expression 
+
+a
+
+At line no: 44 logic_expression : rel_expression 
+
+a
+
+At line no: 44 arguments : logic_expression 
+
+a
+
+At line no: 44 variable : ID 
+
+c
+
+Error at line 44: Array 'c' must be accessed with an index
+At line no: 44 factor : variable 
+
+c
+
+At line no: 44 unary_expression : factor 
+
+c
+
+At line no: 44 term : unary_expression 
+
+c
+
+At line no: 44 simple_expression : term 
+
+c
+
+At line no: 44 rel_expression : simple_expression 
+
+c
+
+At line no: 44 logic_expression : rel_expression 
+
+c
+
+At line no: 44 arguments : arguments COMMA logic_expression 
+
+a,c
+
+At line no: 44 argument_list : arguments 
+
+a,c
+
+At line no: 44 factor : ID LPAREN argument_list RPAREN 
+
+correct_foo(a,c)
+
+At line no: 44 unary_expression : factor 
+
+correct_foo(a,c)
+
+At line no: 44 term : unary_expression 
+
+correct_foo(a,c)
+
+At line no: 44 simple_expression : term 
+
+correct_foo(a,c)
+
+At line no: 44 rel_expression : simple_expression 
+
+correct_foo(a,c)
+
+At line no: 44 logic_expression : rel_expression 
+
+correct_foo(a,c)
+
+At line no: 44 expression : variable ASSIGNOP logic_expression 
+
+a=correct_foo(a,c)
+
+At line no: 44 expression_statement : expression SEMICOLON 
+
+a=correct_foo(a,c);
+
+At line no: 44 statement : expression_statement 
+
+a=correct_foo(a,c);
+
+At line no: 44 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+
+At line no: 45 variable : ID 
+
+b
+
+At line no: 45 variable : ID 
+
+a
+
+At line no: 45 factor : variable 
+
+a
+
+At line no: 45 unary_expression : factor 
+
+a
+
+At line no: 45 term : unary_expression 
+
+a
+
+At line no: 45 simple_expression : term 
+
+a
+
+At line no: 45 rel_expression : simple_expression 
+
+a
+
+At line no: 45 logic_expression : rel_expression 
+
+a
+
+At line no: 45 arguments : logic_expression 
+
+a
+
+At line no: 45 argument_list : arguments 
+
+a
+
+At line no: 45 factor : ID LPAREN argument_list RPAREN 
+
+correct_foo(a)
+
+Error at line 45: Function 'correct_foo' called with wrong number of arguments
+At line no: 45 unary_expression : factor 
+
+correct_foo(a)
+
+At line no: 45 term : unary_expression 
+
+correct_foo(a)
+
+At line no: 45 simple_expression : term 
+
+correct_foo(a)
+
+At line no: 45 rel_expression : simple_expression 
+
+correct_foo(a)
+
+At line no: 45 logic_expression : rel_expression 
+
+correct_foo(a)
+
+At line no: 45 expression : variable ASSIGNOP logic_expression 
+
+b=correct_foo(a)
+
+At line no: 45 expression_statement : expression SEMICOLON 
+
+b=correct_foo(a);
+
+At line no: 45 statement : expression_statement 
+
+b=correct_foo(a);
+
+At line no: 45 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+
+At line no: 47 variable : ID 
+
+k
+
+Error at line 47: Undeclared variable 'k'
+At line no: 47 factor : CONST_INT 
+
+5
+
+At line no: 47 unary_expression : factor 
+
+5
+
+At line no: 47 term : unary_expression 
+
+5
+
+At line no: 47 simple_expression : term 
+
+5
+
+At line no: 47 factor : CONST_INT 
+
+2
+
+At line no: 47 unary_expression : factor 
+
+2
+
+At line no: 47 term : unary_expression 
+
+2
+
+At line no: 47 simple_expression : simple_expression ADDOP term 
+
+5+2
+
+At line no: 47 rel_expression : simple_expression 
+
+5+2
+
+At line no: 47 logic_expression : rel_expression 
+
+5+2
+
+At line no: 47 expression : variable ASSIGNOP logic_expression 
+
+k=5+2
+
+At line no: 47 expression_statement : expression SEMICOLON 
+
+k=5+2;
+
+At line no: 47 statement : expression_statement 
+
+k=5+2;
+
+At line no: 47 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+
+At line no: 48 factor : CONST_INT 
+
+5
+
+At line no: 48 unary_expression : factor 
+
+5
+
+At line no: 48 term : unary_expression 
+
+5
+
+At line no: 48 simple_expression : term 
+
+5
+
+At line no: 48 rel_expression : simple_expression 
+
+5
+
+At line no: 48 logic_expression : rel_expression 
+
+5
+
+At line no: 48 expression : logic_expression 
+
+5
+
+At line no: 48 variable : ID LTHIRD expression RTHIRD 
+
+b[5]
+
+Error at line 48: Non-array variable 'b' cannot be accessed with index
+At line no: 48 factor : CONST_INT 
+
+7
+
+At line no: 48 unary_expression : factor 
+
+7
+
+At line no: 48 term : unary_expression 
+
+7
+
+At line no: 48 simple_expression : term 
+
+7
+
+At line no: 48 rel_expression : simple_expression 
+
+7
+
+At line no: 48 logic_expression : rel_expression 
+
+7
+
+At line no: 48 expression : variable ASSIGNOP logic_expression 
+
+b[5]=7
+
+At line no: 48 expression_statement : expression SEMICOLON 
+
+b[5]=7;
+
+At line no: 48 statement : expression_statement 
+
+b[5]=7;
+
+At line no: 48 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+
+At line no: 49 factor : CONST_FLOAT 
+
+2.5
+
+At line no: 49 unary_expression : factor 
+
+2.5
+
+At line no: 49 term : unary_expression 
+
+2.5
+
+At line no: 49 simple_expression : term 
+
+2.5
+
+At line no: 49 rel_expression : simple_expression 
+
+2.5
+
+At line no: 49 logic_expression : rel_expression 
+
+2.5
+
+At line no: 49 expression : logic_expression 
+
+2.5
+
+At line no: 49 variable : ID LTHIRD expression RTHIRD 
+
+c[2.5]
+
+Error at line 49: Array index must be an integer
+At line no: 49 factor : CONST_INT 
+
+8
+
+At line no: 49 unary_expression : factor 
+
+8
+
+At line no: 49 term : unary_expression 
+
+8
+
+At line no: 49 simple_expression : term 
+
+8
+
+At line no: 49 rel_expression : simple_expression 
+
+8
+
+At line no: 49 logic_expression : rel_expression 
+
+8
+
+At line no: 49 expression : variable ASSIGNOP logic_expression 
+
+c[2.5]=8
+
+At line no: 49 expression_statement : expression SEMICOLON 
+
+c[2.5]=8;
+
+At line no: 49 statement : expression_statement 
+
+c[2.5]=8;
+
+At line no: 49 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+
+At line no: 50 factor : CONST_INT 
+
+0
+
+At line no: 50 unary_expression : factor 
+
+0
+
+At line no: 50 term : unary_expression 
+
+0
+
+At line no: 50 simple_expression : term 
+
+0
+
+At line no: 50 rel_expression : simple_expression 
+
+0
+
+At line no: 50 logic_expression : rel_expression 
+
+0
+
+At line no: 50 expression : logic_expression 
+
+0
+
+At line no: 50 variable : ID LTHIRD expression RTHIRD 
+
+c[0]
+
+At line no: 50 factor : CONST_INT 
+
+2
+
+At line no: 50 unary_expression : factor 
+
+2
+
+At line no: 50 term : unary_expression 
+
+2
+
+At line no: 50 simple_expression : term 
+
+2
+
+At line no: 50 factor : CONST_INT 
+
+5
+
+At line no: 50 unary_expression : factor 
+
+5
+
+At line no: 50 term : unary_expression 
+
+5
+
+At line no: 50 factor : CONST_INT 
+
+7
+
+At line no: 50 unary_expression : factor 
+
+7
+
+At line no: 50 term : unary_expression 
+
+7
+
+At line no: 50 simple_expression : term 
+
+7
+
+At line no: 50 rel_expression : simple_expression 
+
+7
+
+At line no: 50 logic_expression : rel_expression 
+
+7
+
+At line no: 50 arguments : logic_expression 
+
+7
+
+At line no: 50 argument_list : arguments 
+
+7
+
+At line no: 50 factor : ID LPAREN argument_list RPAREN 
+
+foo4(7)
+
+Error at line 50: Void function 'foo4' cannot be used in an expression
+At line no: 50 unary_expression : factor 
+
+foo4(7)
+
+At line no: 50 term : term MULOP unary_expression 
+
+5*foo4(7)
+
+Error at line 50: Non-numeric operands in multiplication expression
+At line no: 50 simple_expression : simple_expression ADDOP term 
+
+2+5*foo4(7)
+
+At line no: 50 rel_expression : simple_expression 
+
+2+5*foo4(7)
+
+At line no: 50 logic_expression : rel_expression 
+
+2+5*foo4(7)
+
+At line no: 50 expression : variable ASSIGNOP logic_expression 
+
+c[0]=2+5*foo4(7)
+
+At line no: 50 expression_statement : expression SEMICOLON 
+
+c[0]=2+5*foo4(7);
+
+At line no: 50 statement : expression_statement 
+
+c[0]=2+5*foo4(7);
+
+At line no: 50 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+
+At line no: 51 factor : CONST_INT 
+
+1
+
+At line no: 51 unary_expression : factor 
+
+1
+
+At line no: 51 term : unary_expression 
+
+1
+
+At line no: 51 simple_expression : term 
+
+1
+
+At line no: 51 rel_expression : simple_expression 
+
+1
+
+At line no: 51 logic_expression : rel_expression 
+
+1
+
+At line no: 51 expression : logic_expression 
+
+1
+
+At line no: 51 variable : ID LTHIRD expression RTHIRD 
+
+c[1]
+
+At line no: 51 factor : CONST_INT 
+
+5
+
+At line no: 51 unary_expression : factor 
+
+5
+
+At line no: 51 term : unary_expression 
+
+5
+
+At line no: 51 simple_expression : term 
+
+5
+
+At line no: 51 rel_expression : simple_expression 
+
+5
+
+At line no: 51 logic_expression : rel_expression 
+
+5
+
+At line no: 51 expression : variable ASSIGNOP logic_expression 
+
+c[1]=5
+
+At line no: 51 expression_statement : expression SEMICOLON 
+
+c[1]=5;
+
+At line no: 51 statement : expression_statement 
+
+c[1]=5;
+
+At line no: 51 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+
+At line no: 52 factor : CONST_INT 
+
+1
+
+At line no: 52 unary_expression : factor 
+
+1
+
+At line no: 52 term : unary_expression 
+
+1
+
+At line no: 52 simple_expression : term 
+
+1
+
+At line no: 52 rel_expression : simple_expression 
+
+1
+
+At line no: 52 logic_expression : rel_expression 
+
+1
+
+At line no: 52 expression : logic_expression 
+
+1
+
+At line no: 52 variable : ID LTHIRD expression RTHIRD 
+
+c[1]
+
+At line no: 52 factor : variable 
+
+c[1]
+
+At line no: 52 unary_expression : factor 
+
+c[1]
+
+At line no: 52 term : unary_expression 
+
+c[1]
+
+At line no: 52 simple_expression : term 
+
+c[1]
+
+At line no: 52 rel_expression : simple_expression 
+
+c[1]
+
+At line no: 52 logic_expression : rel_expression 
+
+c[1]
+
+At line no: 52 arguments : logic_expression 
+
+c[1]
+
+At line no: 52 argument_list : arguments 
+
+c[1]
+
+At line no: 52 factor : ID LPAREN argument_list RPAREN 
+
+foo4(c[1])
+
+Error at line 52: Void function 'foo4' cannot be used in an expression
+At line no: 52 unary_expression : factor 
+
+foo4(c[1])
+
+At line no: 52 term : unary_expression 
+
+foo4(c[1])
+
+At line no: 52 simple_expression : term 
+
+foo4(c[1])
+
+At line no: 52 rel_expression : simple_expression 
+
+foo4(c[1])
+
+At line no: 52 logic_expression : rel_expression 
+
+foo4(c[1])
+
+At line no: 52 expression : logic_expression 
+
+foo4(c[1])
+
+At line no: 52 expression_statement : expression SEMICOLON 
+
+foo4(c[1]);
+
+At line no: 52 statement : expression_statement 
+
+foo4(c[1]);
+
+At line no: 52 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+
+At line no: 53 factor : CONST_INT 
+
+2
+
+At line no: 53 unary_expression : factor 
+
+2
+
+At line no: 53 term : unary_expression 
+
+2
+
+At line no: 53 simple_expression : term 
+
+2
+
+At line no: 53 rel_expression : simple_expression 
+
+2
+
+At line no: 53 logic_expression : rel_expression 
+
+2
+
+At line no: 53 expression : logic_expression 
+
+2
+
+At line no: 53 variable : ID LTHIRD expression RTHIRD 
+
+c[2]
+
+At line no: 53 factor : CONST_INT 
+
+1
+
+At line no: 53 unary_expression : factor 
+
+1
+
+At line no: 53 term : unary_expression 
+
+1
+
+At line no: 53 simple_expression : term 
+
+1
+
+At line no: 53 rel_expression : simple_expression 
+
+1
+
+At line no: 53 logic_expression : rel_expression 
+
+1
+
+At line no: 53 expression : logic_expression 
+
+1
+
+At line no: 53 variable : ID LTHIRD expression RTHIRD 
+
+c[1]
+
+At line no: 53 factor : variable 
+
+c[1]
+
+At line no: 53 unary_expression : factor 
+
+c[1]
+
+At line no: 53 term : unary_expression 
+
+c[1]
+
+At line no: 53 simple_expression : term 
+
+c[1]
+
+At line no: 53 rel_expression : simple_expression 
+
+c[1]
+
+At line no: 53 logic_expression : rel_expression 
+
+c[1]
+
+At line no: 53 arguments : logic_expression 
+
+c[1]
+
+At line no: 53 argument_list : arguments 
+
+c[1]
+
+At line no: 53 factor : ID LPAREN argument_list RPAREN 
+
+foo4(c[1])
+
+Error at line 53: Void function 'foo4' cannot be used in an expression
+At line no: 53 unary_expression : factor 
+
+foo4(c[1])
+
+At line no: 53 term : unary_expression 
+
+foo4(c[1])
+
+At line no: 53 simple_expression : term 
+
+foo4(c[1])
+
+At line no: 53 rel_expression : simple_expression 
+
+foo4(c[1])
+
+At line no: 53 logic_expression : rel_expression 
+
+foo4(c[1])
+
+At line no: 53 expression : variable ASSIGNOP logic_expression 
+
+c[2]=foo4(c[1])
+
+Error at line 53: Type mismatch in assignment
+At line no: 53 expression_statement : expression SEMICOLON 
+
+c[2]=foo4(c[1]);
+
+At line no: 53 statement : expression_statement 
+
+c[2]=foo4(c[1]);
+
+At line no: 53 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+
+At line no: 54 factor : CONST_INT 
+
+3
+
+At line no: 54 unary_expression : factor 
+
+3
+
+At line no: 54 term : unary_expression 
+
+3
+
+At line no: 54 simple_expression : term 
+
+3
+
+At line no: 54 rel_expression : simple_expression 
+
+3
+
+At line no: 54 logic_expression : rel_expression 
+
+3
+
+At line no: 54 expression : logic_expression 
+
+3
+
+At line no: 54 variable : ID LTHIRD expression RTHIRD 
+
+c[3]
+
+At line no: 54 factor : CONST_FLOAT 
+
+2.7
+
+At line no: 54 unary_expression : factor 
+
+2.7
+
+At line no: 54 term : unary_expression 
+
+2.7
+
+At line no: 54 simple_expression : term 
+
+2.7
+
+At line no: 54 rel_expression : simple_expression 
+
+2.7
+
+At line no: 54 logic_expression : rel_expression 
+
+2.7
+
+At line no: 54 expression : variable ASSIGNOP logic_expression 
+
+c[3]=2.7
+
+Warning at line 54: Possible loss of precision in assignment of float to int
+At line no: 54 expression_statement : expression SEMICOLON 
+
+c[3]=2.7;
+
+At line no: 54 statement : expression_statement 
+
+c[3]=2.7;
+
+At line no: 54 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+
+At line no: 55 variable : ID 
+
+b
+
+At line no: 55 factor : CONST_INT 
+
+5
+
+At line no: 55 unary_expression : factor 
+
+5
+
+At line no: 55 term : unary_expression 
+
+5
+
+At line no: 55 factor : CONST_INT 
+
+0
+
+At line no: 55 unary_expression : factor 
+
+0
+
+At line no: 55 term : term MULOP unary_expression 
+
+5%0
+
+Error at line 55: Modulus by zero
+At line no: 55 simple_expression : term 
+
+5%0
+
+At line no: 55 rel_expression : simple_expression 
+
+5%0
+
+At line no: 55 logic_expression : rel_expression 
+
+5%0
+
+At line no: 55 expression : variable ASSIGNOP logic_expression 
+
+b=5%0
+
+At line no: 55 expression_statement : expression SEMICOLON 
+
+b=5%0;
+
+At line no: 55 statement : expression_statement 
+
+b=5%0;
+
+At line no: 55 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+
+At line no: 56 variable : ID 
+
+b
+
+At line no: 56 factor : CONST_INT 
+
+2
+
+At line no: 56 unary_expression : factor 
+
+2
+
+At line no: 56 term : unary_expression 
+
+2
+
+At line no: 56 factor : CONST_FLOAT 
+
+3.5
+
+At line no: 56 unary_expression : factor 
+
+3.5
+
+At line no: 56 term : term MULOP unary_expression 
+
+2%3.5
+
+Error at line 56: Both operands of modulus must be integers
+At line no: 56 simple_expression : term 
+
+2%3.5
+
+At line no: 56 rel_expression : simple_expression 
+
+2%3.5
+
+At line no: 56 logic_expression : rel_expression 
+
+2%3.5
+
+At line no: 56 expression : variable ASSIGNOP logic_expression 
+
+b=2%3.5
+
+At line no: 56 expression_statement : expression SEMICOLON 
+
+b=2%3.5;
+
+At line no: 56 statement : expression_statement 
+
+b=2%3.5;
+
+At line no: 56 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+
+At line no: 58 variable : ID 
+
+dd
+
+At line no: 58 variable : ID 
+
+a
+
+At line no: 58 factor : variable 
+
+a
+
+At line no: 58 unary_expression : factor 
+
+a
+
+At line no: 58 term : unary_expression 
+
+a
+
+At line no: 58 simple_expression : term 
+
+a
+
+At line no: 58 rel_expression : simple_expression 
+
+a
+
+At line no: 58 logic_expression : rel_expression 
+
+a
+
+At line no: 58 arguments : logic_expression 
+
+a
+
+At line no: 58 argument_list : arguments 
+
+a
+
+At line no: 58 factor : ID LPAREN argument_list RPAREN 
+
+foo5(a)
+
+Error at line 58: Undeclared function 'foo5'
+At line no: 58 unary_expression : factor 
+
+foo5(a)
+
+At line no: 58 term : unary_expression 
+
+foo5(a)
+
+At line no: 58 simple_expression : term 
+
+foo5(a)
+
+At line no: 58 rel_expression : simple_expression 
+
+foo5(a)
+
+At line no: 58 logic_expression : rel_expression 
+
+foo5(a)
+
+At line no: 58 expression : variable ASSIGNOP logic_expression 
+
+dd=foo5(a)
+
+Error at line 58: Type mismatch in assignment
+At line no: 58 expression_statement : expression SEMICOLON 
+
+dd=foo5(a);
+
+At line no: 58 statement : expression_statement 
+
+dd=foo5(a);
+
+At line no: 58 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+
+At line no: 60 statement : PRINTLN LPAREN ID RPAREN SEMICOLON 
+
+printf(h);
+
+At line no: 60 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+printf(h);
+
+At line no: 61 factor : CONST_INT 
+
+0
+
+At line no: 61 unary_expression : factor 
+
+0
+
+At line no: 61 term : unary_expression 
+
+0
+
+At line no: 61 simple_expression : term 
+
+0
+
+At line no: 61 rel_expression : simple_expression 
+
+0
+
+At line no: 61 logic_expression : rel_expression 
+
+0
+
+At line no: 61 expression : logic_expression 
+
+0
+
+At line no: 61 statement : RETURN expression SEMICOLON 
+
+return 0;
+
+At line no: 61 statements : statements statement 
+
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+printf(h);
+return 0;
+
+At line no: 64 compound_statement : LCURL statements RCURL 
+
+{
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+printf(h);
+return 0;
+}
+
+ScopeTable with id 19 removed
+At line no: 64 func_definition : type_specifier ID LPAREN RPAREN compound_statement 
+
+int main()
+{
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+printf(h);
+return 0;
+}
+
+ScopeTable with id 18 removed
+At line no: 64 unit : func_definition 
+
+int main()
+{
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+printf(h);
+return 0;
+}
+
+At line no: 64 program : program unit 
+
+int x,y,z;
+float a;
+int func(int c,int d)
+{
+return 7;
+}
+int correct_foo(int a,float b)
+{
+return a+3;
+}
+void foo(int a)
+{
+y=6;
+}
+int foo2(int a,int a,float b)
+{
+return a+2;
+}
+void foo3(int a,int b)
+{
+y=7;
+}
+int z(int d)
+{
+return d;
+}
+int var(int a)
+{
+return a;
+}
+void foo4(int a)
+{
+return a+3;
+}
+int main()
+{
+int a,b,c[4],dd,ee;
+void e;
+float a,c[7];
+func(2.5,3.5);
+a=correct_foo(a,c);
+b=correct_foo(a);
+k=5+2;
+b[5]=7;
+c[2.5]=8;
+c[0]=2+5*foo4(7);
+c[1]=5;
+foo4(c[1]);
+c[2]=foo4(c[1]);
+c[3]=2.7;
+b=5%0;
+b=2%3.5;
+dd=foo5(a);
+printf(h);
+return 0;
+}
+
+At line no: 65 start : program 
 
 Symbol Table
 
 ################################
 
 ScopeTable # 1
-Bucket 76 --> <func, ID, int, {}> 
+Bucket 11 --> <a, ID> 
+Bucket 27 --> <main, ID, int, {}> 
+Bucket 33 --> <correct_foo, ID, int, {int, float}> 
+Bucket 34 --> <x, ID> 
+Bucket 35 --> <y, ID> 
+Bucket 36 --> <z, ID> 
+Bucket 76 --> <func, ID, int, {int, int}> 
+Bucket 86 --> <var, ID, int, {int}> 
+Bucket 89 --> <foo, ID, void, {int}> 
+Bucket 91 --> <foo2, ID, int, {int, int, float}> 
+Bucket 92 --> <foo3, ID, void, {int, int}> 
+Bucket 93 --> <foo4, ID, void, {int}> 
 ################################
 
 
-Total lines: 24
+Total lines: 65
+Total errors: 18

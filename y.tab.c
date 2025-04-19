@@ -77,9 +77,41 @@ extern YYSTYPE yylval;
 symbol_table *table;  // Global symbol table
 string current_type;  // Track current declaration type
 vector<string> current_params;  // Track function parameters
+vector<string> current_args;    // Track function call arguments
 
 int lines = 1;
+int error_count = 0;
 ofstream outlog;
+ofstream errorout;
+
+// Helper functions for semantic analysis
+void semantic_error(string message) {
+    error_count++;
+    errorout << "Error at line " << lines << ": " << message << endl;
+    outlog << "Error at line " << lines << ": " << message << endl;
+}
+
+void semantic_warning(string message) {
+    errorout << "Warning at line " << lines << ": " << message << endl;
+    outlog << "Warning at line " << lines << ": " << message << endl;
+}
+
+// Type checking helper functions
+bool is_int_type(string type) {
+    return type == "int";
+}
+
+bool is_float_type(string type) {
+    return type == "float";
+}
+
+bool is_void_type(string type) {
+    return type == "void";
+}
+
+bool is_numeric_type(string type) {
+    return is_int_type(type) || is_float_type(type);
+}
 
 void yyerror(char *s)
 {
@@ -88,7 +120,7 @@ void yyerror(char *s)
 
 
 /* Line 371 of yacc.c  */
-#line 92 "y.tab.c"
+#line 124 "y.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -232,7 +264,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 236 "y.tab.c"
+#line 268 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -549,13 +581,13 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    32,    32,    40,    46,    54,    60,    69,    68,    90,
-      89,   106,   113,   120,   128,   139,   138,   152,   160,   169,
-     176,   183,   192,   199,   207,   214,   224,   230,   238,   244,
-     250,   256,   262,   268,   274,   280,   286,   294,   300,   308,
-     314,   322,   328,   336,   342,   350,   356,   364,   370,   378,
-     384,   392,   398,   404,   412,   418,   424,   430,   436,   442,
-     448,   456,   463,   470,   476
+       0,    64,    64,    72,    78,    86,    92,   101,   100,   142,
+     141,   174,   181,   188,   196,   207,   206,   220,   228,   237,
+     244,   251,   260,   273,   292,   305,   326,   332,   340,   346,
+     352,   358,   364,   370,   376,   382,   388,   400,   406,   414,
+     445,   481,   488,   521,   528,   557,   564,   593,   600,   641,
+     648,   735,   762,   789,   798,   806,   869,   877,   884,   891,
+     911,   933,   940,   949,   958
 };
 #endif
 
@@ -1534,7 +1566,7 @@ yyreduce:
     {
         case 2:
 /* Line 1792 of yacc.c  */
-#line 33 "syntax_analyzer.y"
+#line 65 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " start : program " << endl << endl;
     outlog << "Symbol Table" << endl << endl;
@@ -1544,7 +1576,7 @@ yyreduce:
 
   case 3:
 /* Line 1792 of yacc.c  */
-#line 41 "syntax_analyzer.y"
+#line 73 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " program : program unit " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() + "\n" + (yyvsp[(2) - (2)])->get_name() << endl << endl;
@@ -1554,7 +1586,7 @@ yyreduce:
 
   case 4:
 /* Line 1792 of yacc.c  */
-#line 47 "syntax_analyzer.y"
+#line 79 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " program : unit " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1564,7 +1596,7 @@ yyreduce:
 
   case 5:
 /* Line 1792 of yacc.c  */
-#line 55 "syntax_analyzer.y"
+#line 87 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " unit : var_declaration " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1574,7 +1606,7 @@ yyreduce:
 
   case 6:
 /* Line 1792 of yacc.c  */
-#line 61 "syntax_analyzer.y"
+#line 93 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " unit : func_definition " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1584,28 +1616,48 @@ yyreduce:
 
   case 7:
 /* Line 1792 of yacc.c  */
-#line 69 "syntax_analyzer.y"
+#line 101 "syntax_analyzer.y"
     {
-    // Store function info before entering new scope
-    table->insert_function((yyvsp[(2) - (5)])->get_name(), (yyvsp[(1) - (5)])->get_name(), current_params);
+    // Check if function already exists
+    symbol_info* existing = table->lookup_current_scope((yyvsp[(2) - (5)])->get_name());
+    if (existing != NULL) {
+        if (existing->is_function()) {
+            // Check if function signature matches
+            if (existing->get_data_type() != (yyvsp[(1) - (5)])->get_name() ||
+                existing->get_param_types() != current_params) {
+                semantic_error("Function '" + (yyvsp[(2) - (5)])->get_name() + "' redeclared with different return type or parameters");
+            }
+        } else {
+            semantic_error("'" + (yyvsp[(2) - (5)])->get_name() + "' redeclared as a function");
+        }
+    } else {
+        // Store function info before entering new scope
+        table->insert_function((yyvsp[(2) - (5)])->get_name(), (yyvsp[(1) - (5)])->get_name(), current_params);
+    }
+
     table->enter_scope();
     table->log_enter_scope(outlog);
-    
+
     // Insert parameters into new scope
     for(size_t i = 0; i < current_params.size(); i++) {
-        table->insert_variable((yyvsp[(2) - (5)])->get_name(), current_params[i]);
+        // Check for void parameters
+        if (current_params[i] == "void" && current_params.size() > 1) {
+            semantic_error("Void cannot be a parameter type except for a function with a single void parameter");
+        } else {
+            table->insert_variable((yyvsp[(2) - (5)])->get_name(), current_params[i]);
+        }
     }
 }
     break;
 
   case 8:
 /* Line 1792 of yacc.c  */
-#line 81 "syntax_analyzer.y"
+#line 133 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement " << endl << endl;
     outlog << (yyvsp[(1) - (7)])->get_name() << " " << (yyvsp[(2) - (7)])->get_name() << "(" << (yyvsp[(4) - (7)])->get_name() << ")\n" << (yyvsp[(7) - (7)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (7)])->get_name() + " " + (yyvsp[(2) - (7)])->get_name() + "(" + (yyvsp[(4) - (7)])->get_name() + ")\n" + (yyvsp[(7) - (7)])->get_name(), "func_def");
-    
+
     table->log_exit_scope(outlog);
     table->exit_scope();
 }
@@ -1613,9 +1665,25 @@ yyreduce:
 
   case 9:
 /* Line 1792 of yacc.c  */
-#line 90 "syntax_analyzer.y"
+#line 142 "syntax_analyzer.y"
     {
-    table->insert_function((yyvsp[(2) - (4)])->get_name(), (yyvsp[(1) - (4)])->get_name(), vector<string>());
+    // Check if function already exists
+    symbol_info* existing = table->lookup_current_scope((yyvsp[(2) - (4)])->get_name());
+    if (existing != NULL) {
+        if (existing->is_function()) {
+            // Check if function signature matches
+            if (existing->get_data_type() != (yyvsp[(1) - (4)])->get_name() ||
+                !existing->get_param_types().empty()) {
+                semantic_error("Function '" + (yyvsp[(2) - (4)])->get_name() + "' redeclared with different return type or parameters");
+            }
+        } else {
+            semantic_error("'" + (yyvsp[(2) - (4)])->get_name() + "' redeclared as a function");
+        }
+    } else {
+        // Store function info before entering new scope
+        table->insert_function((yyvsp[(2) - (4)])->get_name(), (yyvsp[(1) - (4)])->get_name(), vector<string>());
+    }
+
     table->enter_scope();
     table->log_enter_scope(outlog);
 }
@@ -1623,12 +1691,12 @@ yyreduce:
 
   case 10:
 /* Line 1792 of yacc.c  */
-#line 96 "syntax_analyzer.y"
+#line 164 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " func_definition : type_specifier ID LPAREN RPAREN compound_statement " << endl << endl;
     outlog << (yyvsp[(1) - (6)])->get_name() << " " << (yyvsp[(2) - (6)])->get_name() << "()\n" << (yyvsp[(6) - (6)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (6)])->get_name() + " " + (yyvsp[(2) - (6)])->get_name() + "()\n" + (yyvsp[(6) - (6)])->get_name(), "func_def");
-    
+
     table->log_exit_scope(outlog);
     table->exit_scope();
 }
@@ -1636,7 +1704,7 @@ yyreduce:
 
   case 11:
 /* Line 1792 of yacc.c  */
-#line 107 "syntax_analyzer.y"
+#line 175 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " parameter_list : parameter_list COMMA type_specifier ID " << endl << endl;
     outlog << (yyvsp[(1) - (4)])->get_name() << "," << (yyvsp[(3) - (4)])->get_name() << " " << (yyvsp[(4) - (4)])->get_name() << endl << endl;
@@ -1647,7 +1715,7 @@ yyreduce:
 
   case 12:
 /* Line 1792 of yacc.c  */
-#line 114 "syntax_analyzer.y"
+#line 182 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " parameter_list : parameter_list COMMA type_specifier " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << "," << (yyvsp[(3) - (3)])->get_name() << endl << endl;
@@ -1658,7 +1726,7 @@ yyreduce:
 
   case 13:
 /* Line 1792 of yacc.c  */
-#line 121 "syntax_analyzer.y"
+#line 189 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " parameter_list : type_specifier ID " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() << " " << (yyvsp[(2) - (2)])->get_name() << endl << endl;
@@ -1670,7 +1738,7 @@ yyreduce:
 
   case 14:
 /* Line 1792 of yacc.c  */
-#line 129 "syntax_analyzer.y"
+#line 197 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " parameter_list : type_specifier " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1682,7 +1750,7 @@ yyreduce:
 
   case 15:
 /* Line 1792 of yacc.c  */
-#line 139 "syntax_analyzer.y"
+#line 207 "syntax_analyzer.y"
     {
     table->enter_scope();
     table->log_enter_scope(outlog);
@@ -1691,12 +1759,12 @@ yyreduce:
 
   case 16:
 /* Line 1792 of yacc.c  */
-#line 144 "syntax_analyzer.y"
+#line 212 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " compound_statement : LCURL statements RCURL " << endl << endl;
     outlog << "{\n" << (yyvsp[(3) - (4)])->get_name() << "\n}" << endl << endl;
     (yyval) = new symbol_info("{\n" + (yyvsp[(3) - (4)])->get_name() + "\n}", "comp_stmnt");
-    
+
     table->log_exit_scope(outlog);
     table->exit_scope();
 }
@@ -1704,7 +1772,7 @@ yyreduce:
 
   case 17:
 /* Line 1792 of yacc.c  */
-#line 153 "syntax_analyzer.y"
+#line 221 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " compound_statement : LCURL RCURL " << endl << endl;
     outlog << "{\n}" << endl << endl;
@@ -1714,7 +1782,7 @@ yyreduce:
 
   case 18:
 /* Line 1792 of yacc.c  */
-#line 161 "syntax_analyzer.y"
+#line 229 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " var_declaration : type_specifier declaration_list SEMICOLON " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << " " << (yyvsp[(2) - (3)])->get_name() << ";" << endl << endl;
@@ -1725,7 +1793,7 @@ yyreduce:
 
   case 19:
 /* Line 1792 of yacc.c  */
-#line 170 "syntax_analyzer.y"
+#line 238 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " type_specifier : INT " << endl << endl;
     outlog << "int" << endl << endl;
@@ -1736,7 +1804,7 @@ yyreduce:
 
   case 20:
 /* Line 1792 of yacc.c  */
-#line 177 "syntax_analyzer.y"
+#line 245 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " type_specifier : FLOAT " << endl << endl;
     outlog << "float" << endl << endl;
@@ -1747,7 +1815,7 @@ yyreduce:
 
   case 21:
 /* Line 1792 of yacc.c  */
-#line 184 "syntax_analyzer.y"
+#line 252 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " type_specifier : VOID " << endl << endl;
     outlog << "void" << endl << endl;
@@ -1758,53 +1826,87 @@ yyreduce:
 
   case 22:
 /* Line 1792 of yacc.c  */
-#line 193 "syntax_analyzer.y"
+#line 261 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " declaration_list : declaration_list COMMA ID " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << "," << (yyvsp[(3) - (3)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "," + (yyvsp[(3) - (3)])->get_name(), "decl_list");
-    table->insert_variable((yyvsp[(3) - (3)])->get_name(), current_type);
+
+    // Check if variable already exists in current scope
+    if (table->lookup_current_scope((yyvsp[(3) - (3)])->get_name()) != NULL) {
+        semantic_error("Multiple declaration of '" + (yyvsp[(3) - (3)])->get_name() + "' in the same scope");
+    } else {
+        table->insert_variable((yyvsp[(3) - (3)])->get_name(), current_type);
+    }
 }
     break;
 
   case 23:
 /* Line 1792 of yacc.c  */
-#line 200 "syntax_analyzer.y"
+#line 274 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD " << endl << endl;
     outlog << (yyvsp[(1) - (6)])->get_name() << "," << (yyvsp[(3) - (6)])->get_name() << "[" << (yyvsp[(5) - (6)])->get_name() << "]" << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (6)])->get_name() + "," + (yyvsp[(3) - (6)])->get_name() + "[" + (yyvsp[(5) - (6)])->get_name() + "]", "decl_list");
-    int size = stoi((yyvsp[(5) - (6)])->get_name());
-    table->insert_array((yyvsp[(3) - (6)])->get_name(), current_type, size);
+
+    // Check if array already exists in current scope
+    if (table->lookup_current_scope((yyvsp[(3) - (6)])->get_name()) != NULL) {
+        semantic_error("Multiple declaration of '" + (yyvsp[(3) - (6)])->get_name() + "' in the same scope");
+    } else {
+        // Check if array size is valid
+        int size = stoi((yyvsp[(5) - (6)])->get_name());
+        if (size <= 0) {
+            semantic_error("Array size must be a positive integer");
+        } else {
+            table->insert_array((yyvsp[(3) - (6)])->get_name(), current_type, size);
+        }
+    }
 }
     break;
 
   case 24:
 /* Line 1792 of yacc.c  */
-#line 208 "syntax_analyzer.y"
+#line 293 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " declaration_list : ID " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "decl_list");
-    table->insert_variable((yyvsp[(1) - (1)])->get_name(), current_type);
+
+    // Check if variable already exists in current scope
+    if (table->lookup_current_scope((yyvsp[(1) - (1)])->get_name()) != NULL) {
+        semantic_error("Multiple declaration of '" + (yyvsp[(1) - (1)])->get_name() + "' in the same scope");
+    } else {
+        table->insert_variable((yyvsp[(1) - (1)])->get_name(), current_type);
+    }
 }
     break;
 
   case 25:
 /* Line 1792 of yacc.c  */
-#line 215 "syntax_analyzer.y"
+#line 306 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " declaration_list : ID LTHIRD CONST_INT RTHIRD " << endl << endl;
     outlog << (yyvsp[(1) - (4)])->get_name() << "[" << (yyvsp[(3) - (4)])->get_name() << "]" << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "[" + (yyvsp[(3) - (4)])->get_name() + "]", "decl_list");
-    int size = stoi((yyvsp[(3) - (4)])->get_name());
-    table->insert_array((yyvsp[(1) - (4)])->get_name(), current_type, size);
+
+    // Check if array already exists in current scope
+    if (table->lookup_current_scope((yyvsp[(1) - (4)])->get_name()) != NULL) {
+        semantic_error("Multiple declaration of '" + (yyvsp[(1) - (4)])->get_name() + "' in the same scope");
+    } else {
+        // Check if array size is valid
+        int size = stoi((yyvsp[(3) - (4)])->get_name());
+        if (size <= 0) {
+            semantic_error("Array size must be a positive integer");
+        } else {
+            table->insert_array((yyvsp[(1) - (4)])->get_name(), current_type, size);
+        }
+    }
 }
     break;
 
   case 26:
 /* Line 1792 of yacc.c  */
-#line 225 "syntax_analyzer.y"
+#line 327 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statements : statement " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1814,7 +1916,7 @@ yyreduce:
 
   case 27:
 /* Line 1792 of yacc.c  */
-#line 231 "syntax_analyzer.y"
+#line 333 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statements : statements statement " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() << "\n" << (yyvsp[(2) - (2)])->get_name() << endl << endl;
@@ -1824,7 +1926,7 @@ yyreduce:
 
   case 28:
 /* Line 1792 of yacc.c  */
-#line 239 "syntax_analyzer.y"
+#line 341 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : var_declaration " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1834,7 +1936,7 @@ yyreduce:
 
   case 29:
 /* Line 1792 of yacc.c  */
-#line 245 "syntax_analyzer.y"
+#line 347 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : expression_statement " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1844,7 +1946,7 @@ yyreduce:
 
   case 30:
 /* Line 1792 of yacc.c  */
-#line 251 "syntax_analyzer.y"
+#line 353 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : compound_statement " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -1854,7 +1956,7 @@ yyreduce:
 
   case 31:
 /* Line 1792 of yacc.c  */
-#line 257 "syntax_analyzer.y"
+#line 359 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : FOR LPAREN expression_statement expression_statement expression RPAREN statement " << endl << endl;
     outlog << "for(" << (yyvsp[(3) - (7)])->get_name() << (yyvsp[(4) - (7)])->get_name() << (yyvsp[(5) - (7)])->get_name() << ")\n" << (yyvsp[(7) - (7)])->get_name() << endl << endl;
@@ -1864,7 +1966,7 @@ yyreduce:
 
   case 32:
 /* Line 1792 of yacc.c  */
-#line 263 "syntax_analyzer.y"
+#line 365 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : IF LPAREN expression RPAREN statement " << endl << endl;
     outlog << "if(" << (yyvsp[(3) - (5)])->get_name() << ")\n" << (yyvsp[(5) - (5)])->get_name() << endl << endl;
@@ -1874,7 +1976,7 @@ yyreduce:
 
   case 33:
 /* Line 1792 of yacc.c  */
-#line 269 "syntax_analyzer.y"
+#line 371 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : IF LPAREN expression RPAREN statement ELSE statement " << endl << endl;
     outlog << "if(" << (yyvsp[(3) - (7)])->get_name() << ")\n" << (yyvsp[(5) - (7)])->get_name() << "\nelse\n" << (yyvsp[(7) - (7)])->get_name() << endl << endl;
@@ -1884,7 +1986,7 @@ yyreduce:
 
   case 34:
 /* Line 1792 of yacc.c  */
-#line 275 "syntax_analyzer.y"
+#line 377 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : WHILE LPAREN expression RPAREN statement " << endl << endl;
     outlog << "while(" << (yyvsp[(3) - (5)])->get_name() << ")\n" << (yyvsp[(5) - (5)])->get_name() << endl << endl;
@@ -1894,7 +1996,7 @@ yyreduce:
 
   case 35:
 /* Line 1792 of yacc.c  */
-#line 281 "syntax_analyzer.y"
+#line 383 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : PRINTLN LPAREN ID RPAREN SEMICOLON " << endl << endl;
     outlog << "printf(" << (yyvsp[(3) - (5)])->get_name() << ");" << endl << endl;
@@ -1904,17 +2006,21 @@ yyreduce:
 
   case 36:
 /* Line 1792 of yacc.c  */
-#line 287 "syntax_analyzer.y"
+#line 389 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " statement : RETURN expression SEMICOLON " << endl << endl;
     outlog << "return " << (yyvsp[(2) - (3)])->get_name() << ";" << endl << endl;
+
+    // TODO: Check return type against function return type
+    // This would require tracking the current function's return type
+
     (yyval) = new symbol_info("return " + (yyvsp[(2) - (3)])->get_name() + ";", "stmnt");
 }
     break;
 
   case 37:
 /* Line 1792 of yacc.c  */
-#line 295 "syntax_analyzer.y"
+#line 401 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " expression_statement : SEMICOLON " << endl << endl;
     outlog << ";" << endl << endl;
@@ -1924,7 +2030,7 @@ yyreduce:
 
   case 38:
 /* Line 1792 of yacc.c  */
-#line 301 "syntax_analyzer.y"
+#line 407 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " expression_statement : expression SEMICOLON " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() << ";" << endl << endl;
@@ -1934,227 +2040,598 @@ yyreduce:
 
   case 39:
 /* Line 1792 of yacc.c  */
-#line 309 "syntax_analyzer.y"
+#line 415 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " variable : ID " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "varbl");
+
+    // Check if the variable is declared
+    symbol_info* symbol = table->lookup_symbol((yyvsp[(1) - (1)])->get_name());
+    if (symbol == NULL) {
+        semantic_error("Undeclared variable '" + (yyvsp[(1) - (1)])->get_name() + "'");
+        (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "varbl");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else {
+        // Check if it's an array being used without index
+        if (symbol->is_array()) {
+            semantic_error("Array '" + (yyvsp[(1) - (1)])->get_name() + "' must be accessed with an index");
+            (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "varbl");
+            (yyval)->set_data_type(symbol->get_data_type());
+            (yyval)->set_is_error(true);
+        } else if (symbol->is_function()) {
+            semantic_error("Function '" + (yyvsp[(1) - (1)])->get_name() + "' cannot be used as a variable");
+            (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "varbl");
+            (yyval)->set_data_type("error");
+            (yyval)->set_is_error(true);
+        } else {
+            // Valid variable
+            (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "varbl");
+            (yyval)->set_data_type(symbol->get_data_type());
+        }
+    }
 }
     break;
 
   case 40:
 /* Line 1792 of yacc.c  */
-#line 315 "syntax_analyzer.y"
+#line 446 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " variable : ID LTHIRD expression RTHIRD " << endl << endl;
     outlog << (yyvsp[(1) - (4)])->get_name() << "[" << (yyvsp[(3) - (4)])->get_name() << "]" << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "[" + (yyvsp[(3) - (4)])->get_name() + "]", "varbl");
+
+    // Check if the array is declared
+    symbol_info* symbol = table->lookup_symbol((yyvsp[(1) - (4)])->get_name());
+    if (symbol == NULL) {
+        semantic_error("Undeclared array '" + (yyvsp[(1) - (4)])->get_name() + "'");
+        (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "[" + (yyvsp[(3) - (4)])->get_name() + "]", "varbl");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else {
+        // Check if it's a non-array being used with index
+        if (!symbol->is_array()) {
+            semantic_error("Non-array variable '" + (yyvsp[(1) - (4)])->get_name() + "' cannot be accessed with index");
+            (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "[" + (yyvsp[(3) - (4)])->get_name() + "]", "varbl");
+            (yyval)->set_data_type(symbol->get_data_type());
+            (yyval)->set_is_error(true);
+        } else {
+            // Check if the index is an integer
+            if (!(yyvsp[(3) - (4)])->get_data_type().empty() && !is_int_type((yyvsp[(3) - (4)])->get_data_type())) {
+                semantic_error("Array index must be an integer");
+                (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "[" + (yyvsp[(3) - (4)])->get_name() + "]", "varbl");
+                (yyval)->set_data_type(symbol->get_data_type());
+                (yyval)->set_is_error(true);
+            } else {
+                // Valid array access
+                (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "[" + (yyvsp[(3) - (4)])->get_name() + "]", "varbl");
+                (yyval)->set_data_type(symbol->get_data_type());
+            }
+        }
+    }
 }
     break;
 
   case 41:
 /* Line 1792 of yacc.c  */
-#line 323 "syntax_analyzer.y"
+#line 482 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " expression : logic_expression " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "expr");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
   case 42:
 /* Line 1792 of yacc.c  */
-#line 329 "syntax_analyzer.y"
+#line 489 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " expression : variable ASSIGNOP logic_expression " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << "=" << (yyvsp[(3) - (3)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "=" + (yyvsp[(3) - (3)])->get_name(), "expr");
+
+    // Check for assignment compatibility
+    if ((yyvsp[(1) - (3)])->get_is_error() || (yyvsp[(3) - (3)])->get_is_error()) {
+        // If either side has an error, propagate it
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "=" + (yyvsp[(3) - (3)])->get_name(), "expr");
+        (yyval)->set_data_type((yyvsp[(1) - (3)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else if ((yyvsp[(1) - (3)])->get_data_type() == "void" || (yyvsp[(3) - (3)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in an expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "=" + (yyvsp[(3) - (3)])->get_name(), "expr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (3)])->get_data_type()) || !is_numeric_type((yyvsp[(3) - (3)])->get_data_type())) {
+        semantic_error("Type mismatch in assignment");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "=" + (yyvsp[(3) - (3)])->get_name(), "expr");
+        (yyval)->set_data_type((yyvsp[(1) - (3)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else {
+        // Type conversion check
+        if (is_int_type((yyvsp[(1) - (3)])->get_data_type()) && is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+            semantic_warning("Possible loss of precision in assignment of float to int");
+        }
+
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "=" + (yyvsp[(3) - (3)])->get_name(), "expr");
+        (yyval)->set_data_type((yyvsp[(1) - (3)])->get_data_type());
+    }
 }
     break;
 
   case 43:
 /* Line 1792 of yacc.c  */
-#line 337 "syntax_analyzer.y"
+#line 522 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " logic_expression : rel_expression " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "lgc_expr");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
   case 44:
 /* Line 1792 of yacc.c  */
-#line 343 "syntax_analyzer.y"
+#line 529 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " logic_expression : rel_expression LOGICOP rel_expression " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << (yyvsp[(2) - (3)])->get_name() << (yyvsp[(3) - (3)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "lgc_expr");
+
+    // Check for logical operator compatibility
+    if ((yyvsp[(1) - (3)])->get_is_error() || (yyvsp[(3) - (3)])->get_is_error()) {
+        // If either side has an error, propagate it
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "lgc_expr");
+        (yyval)->set_data_type("int"); // Result of logical operation is always int
+        (yyval)->set_is_error(true);
+    } else if ((yyvsp[(1) - (3)])->get_data_type() == "void" || (yyvsp[(3) - (3)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in a logical expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "lgc_expr");
+        (yyval)->set_data_type("int"); // Result of logical operation is always int
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (3)])->get_data_type()) || !is_numeric_type((yyvsp[(3) - (3)])->get_data_type())) {
+        semantic_error("Non-numeric operands in logical expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "lgc_expr");
+        (yyval)->set_data_type("int"); // Result of logical operation is always int
+        (yyval)->set_is_error(true);
+    } else {
+        // Valid logical operation
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "lgc_expr");
+        (yyval)->set_data_type("int"); // Result of logical operation is always int
+    }
 }
     break;
 
   case 45:
 /* Line 1792 of yacc.c  */
-#line 351 "syntax_analyzer.y"
+#line 558 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " rel_expression : simple_expression " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "rel_expr");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
   case 46:
 /* Line 1792 of yacc.c  */
-#line 357 "syntax_analyzer.y"
+#line 565 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " rel_expression : simple_expression RELOP simple_expression " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << (yyvsp[(2) - (3)])->get_name() << (yyvsp[(3) - (3)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "rel_expr");
+
+    // Check for relational operator compatibility
+    if ((yyvsp[(1) - (3)])->get_is_error() || (yyvsp[(3) - (3)])->get_is_error()) {
+        // If either side has an error, propagate it
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "rel_expr");
+        (yyval)->set_data_type("int"); // Result of relational operation is always int
+        (yyval)->set_is_error(true);
+    } else if ((yyvsp[(1) - (3)])->get_data_type() == "void" || (yyvsp[(3) - (3)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in a relational expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "rel_expr");
+        (yyval)->set_data_type("int"); // Result of relational operation is always int
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (3)])->get_data_type()) || !is_numeric_type((yyvsp[(3) - (3)])->get_data_type())) {
+        semantic_error("Non-numeric operands in relational expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "rel_expr");
+        (yyval)->set_data_type("int"); // Result of relational operation is always int
+        (yyval)->set_is_error(true);
+    } else {
+        // Valid relational operation
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "rel_expr");
+        (yyval)->set_data_type("int"); // Result of relational operation is always int
+    }
 }
     break;
 
   case 47:
 /* Line 1792 of yacc.c  */
-#line 365 "syntax_analyzer.y"
+#line 594 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " simple_expression : term " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "simp_expr");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
   case 48:
 /* Line 1792 of yacc.c  */
-#line 371 "syntax_analyzer.y"
+#line 601 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " simple_expression : simple_expression ADDOP term " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << (yyvsp[(2) - (3)])->get_name() << (yyvsp[(3) - (3)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "simp_expr");
+
+    // Check for arithmetic operator compatibility
+    if ((yyvsp[(1) - (3)])->get_is_error() || (yyvsp[(3) - (3)])->get_is_error()) {
+        // If either side has an error, propagate it
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "simp_expr");
+        (yyval)->set_is_error(true);
+
+        // Determine result type (prefer float over int)
+        if (is_float_type((yyvsp[(1) - (3)])->get_data_type()) || is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+            (yyval)->set_data_type("float");
+        } else {
+            (yyval)->set_data_type("int");
+        }
+    } else if ((yyvsp[(1) - (3)])->get_data_type() == "void" || (yyvsp[(3) - (3)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in an arithmetic expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "simp_expr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (3)])->get_data_type()) || !is_numeric_type((yyvsp[(3) - (3)])->get_data_type())) {
+        semantic_error("Non-numeric operands in arithmetic expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "simp_expr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else {
+        // Valid arithmetic operation
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "simp_expr");
+
+        // Determine result type (prefer float over int)
+        if (is_float_type((yyvsp[(1) - (3)])->get_data_type()) || is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+            (yyval)->set_data_type("float");
+        } else {
+            (yyval)->set_data_type("int");
+        }
+    }
 }
     break;
 
   case 49:
 /* Line 1792 of yacc.c  */
-#line 379 "syntax_analyzer.y"
+#line 642 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " term : unary_expression " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "term");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
   case 50:
 /* Line 1792 of yacc.c  */
-#line 385 "syntax_analyzer.y"
+#line 649 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " term : term MULOP unary_expression " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << (yyvsp[(2) - (3)])->get_name() << (yyvsp[(3) - (3)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+
+    // Check for multiplication operator compatibility
+    if ((yyvsp[(1) - (3)])->get_is_error() || (yyvsp[(3) - (3)])->get_is_error()) {
+        // If either side has an error, propagate it
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+        (yyval)->set_is_error(true);
+
+        // Determine result type (prefer float over int)
+        if (is_float_type((yyvsp[(1) - (3)])->get_data_type()) || is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+            (yyval)->set_data_type("float");
+        } else {
+            (yyval)->set_data_type("int");
+        }
+    } else if ((yyvsp[(1) - (3)])->get_data_type() == "void" || (yyvsp[(3) - (3)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in a multiplication expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (3)])->get_data_type()) || !is_numeric_type((yyvsp[(3) - (3)])->get_data_type())) {
+        semantic_error("Non-numeric operands in multiplication expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else {
+        // Check for modulus operator
+        if ((yyvsp[(2) - (3)])->get_name() == "%") {
+            // Both operands must be integers for modulus
+            if (!is_int_type((yyvsp[(1) - (3)])->get_data_type()) || !is_int_type((yyvsp[(3) - (3)])->get_data_type())) {
+                semantic_error("Both operands of modulus must be integers");
+                (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+                (yyval)->set_data_type("int"); // Result of modulus is always int
+                (yyval)->set_is_error(true);
+            } else {
+                // Check for modulus by zero
+                if ((yyvsp[(3) - (3)])->get_name() == "0") {
+                    semantic_error("Modulus by zero");
+                    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+                    (yyval)->set_data_type("int");
+                    (yyval)->set_is_error(true);
+                } else {
+                    (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+                    (yyval)->set_data_type("int"); // Result of modulus is always int
+                }
+            }
+        } else if ((yyvsp[(2) - (3)])->get_name() == "/") {
+            // Check for division by zero
+            if ((yyvsp[(3) - (3)])->get_name() == "0") {
+                semantic_error("Division by zero");
+                (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+                (yyval)->set_is_error(true);
+
+                // Determine result type (prefer float over int)
+                if (is_float_type((yyvsp[(1) - (3)])->get_data_type()) || is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+                    (yyval)->set_data_type("float");
+                } else {
+                    (yyval)->set_data_type("int");
+                }
+            } else {
+                // Valid division
+                (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+
+                // Determine result type (prefer float over int)
+                if (is_float_type((yyvsp[(1) - (3)])->get_data_type()) || is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+                    (yyval)->set_data_type("float");
+                } else {
+                    (yyval)->set_data_type("int");
+                }
+            }
+        } else {
+            // Valid multiplication or other operation
+            (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + (yyvsp[(2) - (3)])->get_name() + (yyvsp[(3) - (3)])->get_name(), "term");
+
+            // Determine result type (prefer float over int)
+            if (is_float_type((yyvsp[(1) - (3)])->get_data_type()) || is_float_type((yyvsp[(3) - (3)])->get_data_type())) {
+                (yyval)->set_data_type("float");
+            } else {
+                (yyval)->set_data_type("int");
+            }
+        }
+    }
 }
     break;
 
   case 51:
 /* Line 1792 of yacc.c  */
-#line 393 "syntax_analyzer.y"
+#line 736 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " unary_expression : ADDOP unary_expression " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() << (yyvsp[(2) - (2)])->get_name() << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+
+    // Check for unary arithmetic operator compatibility
+    if ((yyvsp[(2) - (2)])->get_is_error()) {
+        // If operand has an error, propagate it
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type((yyvsp[(2) - (2)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else if ((yyvsp[(2) - (2)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in an arithmetic expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(2) - (2)])->get_data_type())) {
+        semantic_error("Non-numeric operand in unary arithmetic expression");
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else {
+        // Valid unary arithmetic operation
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type((yyvsp[(2) - (2)])->get_data_type()); // Preserve operand type
+    }
 }
     break;
 
   case 52:
 /* Line 1792 of yacc.c  */
-#line 399 "syntax_analyzer.y"
+#line 763 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " unary_expression : NOT unary_expression " << endl << endl;
     outlog << "!" << (yyvsp[(2) - (2)])->get_name() << endl << endl;
-    (yyval) = new symbol_info("!" + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+
+    // Check for logical NOT operator compatibility
+    if ((yyvsp[(2) - (2)])->get_is_error()) {
+        // If operand has an error, propagate it
+        (yyval) = new symbol_info("!" + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type("int"); // Result of logical NOT is always int
+        (yyval)->set_is_error(true);
+    } else if ((yyvsp[(2) - (2)])->get_data_type() == "void") {
+        semantic_error("Void cannot be used in a logical expression");
+        (yyval) = new symbol_info("!" + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type("int"); // Result of logical NOT is always int
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(2) - (2)])->get_data_type())) {
+        semantic_error("Non-numeric operand in logical NOT expression");
+        (yyval) = new symbol_info("!" + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type("int"); // Result of logical NOT is always int
+        (yyval)->set_is_error(true);
+    } else {
+        // Valid logical NOT operation
+        (yyval) = new symbol_info("!" + (yyvsp[(2) - (2)])->get_name(), "un_expr");
+        (yyval)->set_data_type("int"); // Result of logical NOT is always int
+    }
 }
     break;
 
   case 53:
 /* Line 1792 of yacc.c  */
-#line 405 "syntax_analyzer.y"
+#line 790 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " unary_expression : factor " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "un_expr");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
   case 54:
 /* Line 1792 of yacc.c  */
-#line 413 "syntax_analyzer.y"
+#line 799 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : variable " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "fctr");
+    (yyval)->set_data_type((yyvsp[(1) - (1)])->get_data_type());
+    (yyval)->set_is_error((yyvsp[(1) - (1)])->get_is_error());
 }
     break;
 
   case 55:
 /* Line 1792 of yacc.c  */
-#line 419 "syntax_analyzer.y"
+#line 807 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : ID LPAREN argument_list RPAREN " << endl << endl;
     outlog << (yyvsp[(1) - (4)])->get_name() << "(" << (yyvsp[(3) - (4)])->get_name() << ")" << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+
+    // Check if the function is declared
+    symbol_info* func = table->lookup_symbol((yyvsp[(1) - (4)])->get_name());
+    if (func == NULL) {
+        semantic_error("Undeclared function '" + (yyvsp[(1) - (4)])->get_name() + "'");
+        (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else if (!func->is_function()) {
+        semantic_error("'" + (yyvsp[(1) - (4)])->get_name() + "' is not a function");
+        (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+        (yyval)->set_data_type("error");
+        (yyval)->set_is_error(true);
+    } else {
+        // Check if the function is void and used in an expression
+        if (func->get_data_type() == "void") {
+            semantic_error("Void function '" + (yyvsp[(1) - (4)])->get_name() + "' cannot be used in an expression");
+            (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+            (yyval)->set_data_type("error");
+            (yyval)->set_is_error(true);
+        } else {
+            // Check argument count
+            if (current_args.size() != func->get_param_types().size()) {
+                semantic_error("Function '" + (yyvsp[(1) - (4)])->get_name() + "' called with wrong number of arguments");
+                (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+                (yyval)->set_data_type(func->get_data_type());
+                (yyval)->set_is_error(true);
+            } else {
+                // Check argument types
+                bool type_mismatch = false;
+                for (size_t i = 0; i < current_args.size(); i++) {
+                    if (!is_numeric_type(current_args[i]) || !is_numeric_type(func->get_param_types()[i])) {
+                        type_mismatch = true;
+                        break;
+                    }
+
+                    // Check for float to int conversion
+                    if (is_float_type(current_args[i]) && is_int_type(func->get_param_types()[i])) {
+                        semantic_warning("Possible loss of precision in argument " + to_string(i+1) + " of call to '" + (yyvsp[(1) - (4)])->get_name() + "'");
+                    }
+                }
+
+                if (type_mismatch) {
+                    semantic_error("Function '" + (yyvsp[(1) - (4)])->get_name() + "' called with incompatible argument types");
+                    (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+                    (yyval)->set_data_type(func->get_data_type());
+                    (yyval)->set_is_error(true);
+                } else {
+                    // Valid function call
+                    (yyval) = new symbol_info((yyvsp[(1) - (4)])->get_name() + "(" + (yyvsp[(3) - (4)])->get_name() + ")", "fctr");
+                    (yyval)->set_data_type(func->get_data_type());
+                }
+            }
+        }
+    }
+
+    // Clear the argument list for the next function call
+    current_args.clear();
 }
     break;
 
   case 56:
 /* Line 1792 of yacc.c  */
-#line 425 "syntax_analyzer.y"
+#line 870 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : LPAREN expression RPAREN " << endl << endl;
     outlog << "(" << (yyvsp[(2) - (3)])->get_name() << ")" << endl << endl;
     (yyval) = new symbol_info("(" + (yyvsp[(2) - (3)])->get_name() + ")", "fctr");
+    (yyval)->set_data_type((yyvsp[(2) - (3)])->get_data_type());
+    (yyval)->set_is_error((yyvsp[(2) - (3)])->get_is_error());
 }
     break;
 
   case 57:
 /* Line 1792 of yacc.c  */
-#line 431 "syntax_analyzer.y"
+#line 878 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : CONST_INT " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "fctr");
+    (yyval)->set_data_type("int");
 }
     break;
 
   case 58:
 /* Line 1792 of yacc.c  */
-#line 437 "syntax_analyzer.y"
+#line 885 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : CONST_FLOAT " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "fctr");
+    (yyval)->set_data_type("float");
 }
     break;
 
   case 59:
 /* Line 1792 of yacc.c  */
-#line 443 "syntax_analyzer.y"
+#line 892 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : variable INCOP " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() << "++" << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "++", "fctr");
+
+    // Check if the variable is numeric
+    if ((yyvsp[(1) - (2)])->get_is_error()) {
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "++", "fctr");
+        (yyval)->set_data_type((yyvsp[(1) - (2)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (2)])->get_data_type())) {
+        semantic_error("Operand of increment operator must be a numeric type");
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "++", "fctr");
+        (yyval)->set_data_type((yyvsp[(1) - (2)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else {
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "++", "fctr");
+        (yyval)->set_data_type((yyvsp[(1) - (2)])->get_data_type());
+    }
 }
     break;
 
   case 60:
 /* Line 1792 of yacc.c  */
-#line 449 "syntax_analyzer.y"
+#line 912 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " factor : variable DECOP " << endl << endl;
     outlog << (yyvsp[(1) - (2)])->get_name() << "--" << endl << endl;
-    (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "--", "fctr");
+
+    // Check if the variable is numeric
+    if ((yyvsp[(1) - (2)])->get_is_error()) {
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "--", "fctr");
+        (yyval)->set_data_type((yyvsp[(1) - (2)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else if (!is_numeric_type((yyvsp[(1) - (2)])->get_data_type())) {
+        semantic_error("Operand of decrement operator must be a numeric type");
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "--", "fctr");
+        (yyval)->set_data_type((yyvsp[(1) - (2)])->get_data_type());
+        (yyval)->set_is_error(true);
+    } else {
+        (yyval) = new symbol_info((yyvsp[(1) - (2)])->get_name() + "--", "fctr");
+        (yyval)->set_data_type((yyvsp[(1) - (2)])->get_data_type());
+    }
 }
     break;
 
   case 61:
 /* Line 1792 of yacc.c  */
-#line 457 "syntax_analyzer.y"
+#line 934 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " argument_list : arguments " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
@@ -2164,37 +2641,46 @@ yyreduce:
 
   case 62:
 /* Line 1792 of yacc.c  */
-#line 463 "syntax_analyzer.y"
+#line 940 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " argument_list :  " << endl << endl;
     outlog << "" << endl << endl;
     (yyval) = new symbol_info("", "arg_list");
+    // Empty argument list is valid
+    current_args.clear();
 }
     break;
 
   case 63:
 /* Line 1792 of yacc.c  */
-#line 471 "syntax_analyzer.y"
+#line 950 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " arguments : arguments COMMA logic_expression " << endl << endl;
     outlog << (yyvsp[(1) - (3)])->get_name() << "," << (yyvsp[(3) - (3)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (3)])->get_name() + "," + (yyvsp[(3) - (3)])->get_name(), "arg");
+
+    // Add the argument type to the list
+    current_args.push_back((yyvsp[(3) - (3)])->get_data_type());
 }
     break;
 
   case 64:
 /* Line 1792 of yacc.c  */
-#line 477 "syntax_analyzer.y"
+#line 959 "syntax_analyzer.y"
     {
     outlog << "At line no: " << lines << " arguments : logic_expression " << endl << endl;
     outlog << (yyvsp[(1) - (1)])->get_name() << endl << endl;
     (yyval) = new symbol_info((yyvsp[(1) - (1)])->get_name(), "arg");
+
+    // Initialize the argument list with the first argument
+    current_args.clear();
+    current_args.push_back((yyvsp[(1) - (1)])->get_data_type());
 }
     break;
 
 
 /* Line 1792 of yacc.c  */
-#line 2198 "y.tab.c"
+#line 2684 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2426,7 +2912,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 484 "syntax_analyzer.y"
+#line 970 "syntax_analyzer.y"
 
 
 int main(int argc, char *argv[])
@@ -2435,10 +2921,11 @@ int main(int argc, char *argv[])
         cout << "Please input file name" << endl;
         return 0;
     }
-    
+
     yyin = fopen(argv[1], "r");
     outlog.open("21301559_log.txt", ios::trunc);
-    
+    errorout.open("21301559_error.txt", ios::trunc);
+
     if(yyin == NULL) {
         cout << "Couldn't open file" << endl;
         return 0;
@@ -2446,14 +2933,18 @@ int main(int argc, char *argv[])
 
     // Create global symbol table with 101 buckets
     table = new symbol_table(101);
-    
+
     yyparse();
-    
+
     outlog << endl << "Total lines: " << lines << endl;
-    
+    outlog << "Total errors: " << error_count << endl;
+
+    errorout << "Total errors: " << error_count << endl;
+
     delete table;
     outlog.close();
+    errorout.close();
     fclose(yyin);
-    
+
     return 0;
 }

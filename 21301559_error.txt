@@ -1,0 +1,22 @@
+Error at line 24: 'z' redeclared as a function
+Error at line 25: Undeclared variable 'd'
+Error at line 39: Multiple declaration of 'a' in the same scope
+Error at line 39: Multiple declaration of 'c' in the same scope
+Warning at line 41: Possible loss of precision in argument 1 of call to 'func'
+Warning at line 41: Possible loss of precision in argument 2 of call to 'func'
+Error at line 44: Array 'c' must be accessed with an index
+Error at line 45: Function 'correct_foo' called with wrong number of arguments
+Error at line 47: Undeclared variable 'k'
+Error at line 48: Non-array variable 'b' cannot be accessed with index
+Error at line 49: Array index must be an integer
+Error at line 50: Void function 'foo4' cannot be used in an expression
+Error at line 50: Non-numeric operands in multiplication expression
+Error at line 52: Void function 'foo4' cannot be used in an expression
+Error at line 53: Void function 'foo4' cannot be used in an expression
+Error at line 53: Type mismatch in assignment
+Warning at line 54: Possible loss of precision in assignment of float to int
+Error at line 55: Modulus by zero
+Error at line 56: Both operands of modulus must be integers
+Error at line 58: Undeclared function 'foo5'
+Error at line 58: Type mismatch in assignment
+Total errors: 18
